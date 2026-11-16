@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Nullable>enable</Nullable>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <!-- NU1510: net10.0 already ships System.Text.Json; the PackageReference
+         is kept as the explicit 10.0.x pin. -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+    <AssemblyName>Shashu.Sdk</AssemblyName>
+    <RootNamespace>Shashu</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <PackageId>Shashu.Sdk</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Trustgate AI LLC</Authors>
+    <Company>Trustgate AI LLC</Company>
+    <Description>.NET client for SHASHU by Trustgate AI, a self-hosted AI security gateway. Point it at your own gateway; there is no default endpoint.</Description>
+    <PackageTags>shashu;self-hosted;ai-gateway;security;openai;llm</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://shashu.ai/docs</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/trustgateai-io/shashu-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryCommit Condition="'$(GITHUB_SHA)' != ''">$(GITHUB_SHA)</RepositoryCommit>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\NOTICE" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Shashu.Sdk.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="10.0.15" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.400" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.15" />
+  </ItemGroup>
+
+</Project>
