@@ -263,11 +263,19 @@ internal sealed class ShashuApi
     {
         var attempt = 0;
         var passRetried = false;
+        var payload = JsonSerializer.SerializeToUtf8Bytes(body, Json);
+        var frozenContext = WorkflowContext.Build(sessionId: ResolveSession(sessionId));
         while (true)
         {
-            using var content = JsonContent.Create(body, options: Json);
+            using var content = new ByteArrayContent(payload);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = content };
-            ApplyWorkflowContext(request, sessionId);
+            foreach (var (k, v) in frozenContext)
+            {
+                if (!request.Headers.Contains(k))
+                    request.Headers.TryAddWithoutValidation(k, v);
+            }
+            ApplyContractVersion(request);
             await ApplyCredentialAsync(request, cancellationToken).ConfigureAwait(false);
 
             HttpResponseMessage response;

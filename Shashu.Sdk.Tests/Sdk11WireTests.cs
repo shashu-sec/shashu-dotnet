@@ -124,6 +124,35 @@ public class Sdk11WireTests
     }
 
     [Fact]
+    public async Task Busy_retry_resends_the_same_built_request()
+    {
+        var bodies = new List<string>();
+        var headerBags = new List<string[]>();
+        var calls = 0;
+        var stub = new StubHandler(async (req, _) =>
+        {
+            bodies.Add(await req.Content!.ReadAsStringAsync());
+            headerBags.Add(
+                req.Headers
+                    .Select(h => $"{h.Key.ToLowerInvariant()}={string.Join(",", h.Value)}")
+                    .OrderBy(x => x, StringComparer.Ordinal)
+                    .ToArray());
+            var n = Interlocked.Increment(ref calls);
+            if (n == 1)
+                return Busy();
+            return Ok();
+        });
+        using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
+        using var client = new ShashuClient(
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "k", MaxRetries = 2 }, http);
+        await client.Chat.Completions.CreateAsync(Req());
+        Assert.Equal(2, bodies.Count);
+        Assert.Equal(bodies[0], bodies[1]);
+        string[] Strip(string[] rows) => rows.Where(r => !r.StartsWith("authorization=", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(Strip(headerBags[0]), Strip(headerBags[1]));
+    }
+
+    [Fact]
     public async Task F_Busy_retry_then_succeeds()
     {
         var calls = 0;

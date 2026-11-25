@@ -45,6 +45,29 @@ public class ShashuRoutingHandlerTests
         Assert.Equal("Bearer sk-trustgate-fake", seen.Headers.Authorization!.ToString());
         // Vendor key dropped:
         Assert.False(seen.Headers.Authorization.Parameter == "sk-real-openai-key");
+        Assert.True(seen.Headers.Contains("x-shashu-trace-id"));
+        Assert.True(seen.Headers.Contains("x-shashu-session-id"));
+    }
+
+    [Fact]
+    public async Task Busy_retry_resends_the_same_body_and_shashu_headers()
+    {
+        var inner = new SequenceInnerHandler();
+        var handler = new ShashuRoutingHandler(
+            "sk-trustgate-fake",
+            inner,
+            new ShashuRoutingOptions { BaseUrl = new Uri("https://gateway.test.invalid/") });
+        var http = new HttpClient(handler);
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        req.Content = JsonContent.Create(new { model = "gpt-4o", messages = new[] { new { role = "user", content = "hi" } } });
+        await http.SendAsync(req);
+
+        Assert.Equal(2, inner.Bodies.Count);
+        Assert.Equal(inner.Bodies[0], inner.Bodies[1]);
+        Assert.Equal(inner.Headers[0]["x-shashu-trace-id"], inner.Headers[1]["x-shashu-trace-id"]);
+        Assert.Equal(inner.Headers[0]["x-shashu-session-id"], inner.Headers[1]["x-shashu-session-id"]);
+        Assert.False(string.IsNullOrWhiteSpace(inner.Headers[0]["x-shashu-trace-id"]));
+        Assert.False(string.IsNullOrWhiteSpace(inner.Headers[0]["x-shashu-session-id"]));
     }
 
     [Fact]
@@ -109,6 +132,8 @@ public class ShashuRoutingHandlerTests
         Assert.Equal("/users/me", seen.RequestUri.AbsolutePath);
         Assert.Null(seen.Headers.Authorization);
         Assert.Equal("secret-token-123", seen.Headers.GetValues("X-Custom-Auth").Single());
+        Assert.False(seen.Headers.Contains("x-shashu-trace-id"));
+        Assert.False(seen.Headers.Contains("x-shashu-session-id"));
     }
 
     [Fact]
@@ -227,5 +252,40 @@ internal sealed class CapturingInnerHandler : HttpMessageHandler
         // SendAsync.)
         LastRequest = request;
         return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+    }
+}
+
+/// <summary>503 with Retry-After=0, then 200. Copies body and headers off each send.</summary>
+internal sealed class SequenceInnerHandler : HttpMessageHandler
+{
+    public List<byte[]> Bodies { get; } = new();
+    public List<Dictionary<string, string>> Headers { get; } = new();
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var body = request.Content is null
+            ? Array.Empty<byte>()
+            : await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        Bodies.Add(body);
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var h in request.Headers)
+            headers[h.Key] = string.Join(",", h.Value);
+        Headers.Add(headers);
+
+        if (Bodies.Count == 1)
+        {
+            var busy = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+            {
+                Content = new StringContent("{\"error\":{\"message\":\"busy\",\"code\":\"gateway_busy\"}}"),
+            };
+            busy.Headers.TryAddWithoutValidation("Retry-After", "0");
+            busy.Headers.TryAddWithoutValidation("x-should-retry", "true");
+            return busy;
+        }
+        return new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"choices\":[]}"),
+        };
     }
 }

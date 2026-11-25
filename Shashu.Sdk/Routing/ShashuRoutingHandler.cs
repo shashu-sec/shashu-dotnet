@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Shashu.Configuration;
+using Shashu.Context;
 using Shashu.Internal;
 
 namespace Shashu.Routing;
@@ -43,6 +44,7 @@ public class ShashuRoutingHandler : DelegatingHandler
     private readonly Uri _gatewayBaseUrl;
     private readonly CredentialResolver _resolver;
     private readonly ShashuRoutingOptions _options;
+    private readonly string _sessionId = Guid.NewGuid().ToString("N");
 
     /// <summary>
     /// Hosts the handler recognises as upstream LLM providers and reroutes
@@ -143,36 +145,73 @@ public class ShashuRoutingHandler : DelegatingHandler
         // re-serialising the body.
         await RetrievalJoiner.JoinAsync(request, cancellationToken).ConfigureAwait(false);
 
-        if (_resolver.UsesProvider && request.Content is not null)
+        // Same frozen workflow headers as ShashuApi: mint once per handler,
+        // caller-supplied values win, retries clone these rather than rebuild.
+        foreach (var (k, v) in WorkflowContext.Build(sessionId: _sessionId))
         {
-            var bytes = await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-            var type = request.Content.Headers.ContentType;
-            request.Content = new ByteArrayContent(bytes);
-            if (type is not null)
-                request.Content.Headers.ContentType = type;
+            if (!request.Headers.Contains(k))
+                request.Headers.TryAddWithoutValidation(k, v);
         }
 
-        var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        if (!_resolver.UsesProvider || (int)response.StatusCode != 401)
-            return response;
+        var payload = request.Content is null
+            ? Array.Empty<byte>()
+            : await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        var contentType = request.Content?.Headers.ContentType;
 
-        var raw = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        var status = (int)response.StatusCode;
-        var code = CredentialResolver.PassRefusalCode(status, raw);
-        if (!CredentialResolver.ShouldRetryPassRefused(
-                usesProvider: true, status, code, bytesDelivered: false))
+        var attempt = 0;
+        var passRetried = false;
+        const int maxRetries = 2;
+        while (true)
         {
-            response.Content = new StringContent(raw, System.Text.Encoding.UTF8, "application/json");
+            var outgoing = CloneForSend(request, payload, contentType);
+            var bearer = await _resolver.GetAsync(cancellationToken).ConfigureAwait(false);
+            outgoing.Headers.Authorization = string.IsNullOrEmpty(bearer)
+                ? null
+                : new AuthenticationHeaderValue("Bearer", bearer);
+
+            var response = await base.SendAsync(outgoing, cancellationToken).ConfigureAwait(false);
+            var status = (int)response.StatusCode;
+            var invited = response.Headers.Contains("x-should-retry")
+                || response.Headers.RetryAfter is not null;
+            var busy = (status == 429 || status == 503) && invited;
+            if (busy && attempt < maxRetries)
+            {
+                var delay = response.Headers.RetryAfter?.Delta ?? TimeSpan.Zero;
+                response.Dispose();
+                if (delay > TimeSpan.Zero)
+                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                attempt++;
+                continue;
+            }
+
+            if (!passRetried && _resolver.UsesProvider && status == 401)
+            {
+                var raw = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                var code = CredentialResolver.PassRefusalCode(status, raw);
+                if (CredentialResolver.ShouldRetryPassRefused(
+                        usesProvider: true, status, code, bytesDelivered: false))
+                {
+                    response.Dispose();
+                    _resolver.Invalidate();
+                    passRetried = true;
+                    continue;
+                }
+                response.Content = new StringContent(raw, System.Text.Encoding.UTF8, "application/json");
+            }
             return response;
         }
+    }
 
-        response.Dispose();
-        _resolver.Invalidate();
-        var retryToken = await _resolver.GetAsync(cancellationToken).ConfigureAwait(false);
-        request.Headers.Authorization = string.IsNullOrEmpty(retryToken)
-            ? null
-            : new AuthenticationHeaderValue("Bearer", retryToken);
-        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    private static HttpRequestMessage CloneForSend(
+        HttpRequestMessage template, byte[] payload, MediaTypeHeaderValue? contentType)
+    {
+        var clone = new HttpRequestMessage(template.Method, template.RequestUri);
+        foreach (var header in template.Headers)
+            clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        clone.Content = new ByteArrayContent(payload);
+        if (contentType is not null)
+            clone.Content.Headers.ContentType = contentType;
+        return clone;
     }
 
     private Uri MapToGatewayUri(Uri originalUri)

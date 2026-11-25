@@ -1,11 +1,14 @@
+using System.Net.Http.Json;
 using Shashu;
 using Shashu.Chat;
+using Shashu.Routing;
 using Xunit;
 
 namespace Shashu.Tests;
 
 /// <summary>
-/// Live SHASHU proof. Skipped unless SHASHU_E2E_BASE_URL is set (throwaway stack).
+/// Live SHASHU proof. Skipped unless SHASHU_E2E_BASE_URL is set — typically by
+/// <c>_internal/identity-i4-i5/e2e_real_stack.py</c> after it boots the throwaway stack.
 /// </summary>
 [Trait("Category", "e2e")]
 public class IdentityE2ETests
@@ -147,5 +150,29 @@ public class IdentityE2ETests
         cfg.ApiKey = key;
         await using var client = new ShashuClient(cfg);
         await client.Chat.Completions.CreateAsync(Req());
+    }
+
+    [SkippableFact]
+    public async Task Handler_sends_trace_session_and_version()
+    {
+        NeedShashu();
+        Skip.If(Env("SHASHU_E2E_KEY") is null, "SHASHU_E2E_KEY not set");
+        var opts = new ShashuRoutingOptions
+        {
+            BaseUrl = new Uri(Env("SHASHU_E2E_BASE_URL")!.TrimEnd('/') + "/"),
+        };
+        using var handler = new ShashuRoutingHandler(Env("SHASHU_E2E_KEY"), new HttpClientHandler(), opts);
+        using var http = new HttpClient(handler);
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        req.Content = JsonContent.Create(new
+        {
+            model = "mock-echo",
+            messages = new[] { new { role = "user", content = "handler e2e" } },
+        });
+        var res = await http.SendAsync(req);
+        Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
+        Assert.True(
+            res.Headers.Contains("Shashu-Version") || res.Headers.Contains("shashu-version"),
+            "Shashu-Version not echoed on the handler-routed response");
     }
 }
