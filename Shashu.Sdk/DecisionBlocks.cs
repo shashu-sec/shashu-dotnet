@@ -163,9 +163,9 @@ public sealed record RoutePolicy
 /// </summary>
 internal static class DecisionBlocks
 {
-    internal const string HeaderAttachments = "x-trustgate-attachments";
-    internal const string HeaderMemory = "x-trustgate-memory";
-    internal const string HeaderInspection = "x-trustgate-inspection";
+    internal const string HeaderAttachments = "x-shashu-attachments";
+    internal const string HeaderMemory = "x-shashu-memory";
+    internal const string HeaderInspection = "x-shashu-inspection";
 
     internal static Attachments? AttachmentsFromBody(JsonElement block)
     {

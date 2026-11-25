@@ -154,7 +154,7 @@ public static class Shashu
     {
         if (err is ChatCompletionResponse chat
             && chat.ExtraFields is not null
-            && chat.ExtraFields.ContainsKey("trustgate"))
+            && chat.ExtraFields.ContainsKey("shashu"))
         {
             return true;
         }
@@ -211,7 +211,7 @@ public static class Shashu
 
     private static ShashuDecision? ReadFromExtra(Dictionary<string, JsonElement>? extra)
     {
-        if (extra is null || !extra.TryGetValue("trustgate", out var tg))
+        if (extra is null || !extra.TryGetValue("shashu", out var tg))
             return null;
         return ReadEnvelope(tg);
     }
@@ -226,11 +226,11 @@ public static class Shashu
 
     private static JsonElement? LocateEnvelope(JsonElement root)
     {
-        if (root.TryGetProperty("trustgate"u8, out var top) && top.ValueKind == JsonValueKind.Object)
+        if (root.TryGetProperty("shashu"u8, out var top) && top.ValueKind == JsonValueKind.Object)
             return top;
         if (root.TryGetProperty("error"u8, out var err)
             && err.ValueKind == JsonValueKind.Object
-            && err.TryGetProperty("trustgate"u8, out var nested)
+            && err.TryGetProperty("shashu"u8, out var nested)
             && nested.ValueKind == JsonValueKind.Object)
         {
             return nested;
@@ -295,21 +295,21 @@ public static class Shashu
             // candidate and a header can cost at most one comparison.
             switch (k.Length)
             {
-                case 20 when k.Equals("x-trustgate-decision", StringComparison.OrdinalIgnoreCase)
+                case 17 when k.Equals("x-shashu-decision", StringComparison.OrdinalIgnoreCase)
                              && !string.IsNullOrWhiteSpace(v):
                     decision = v.Trim();
                     break;
-                case 16 when k.Equals("x-trustgate-code", StringComparison.OrdinalIgnoreCase)
+                case 13 when k.Equals("x-shashu-code", StringComparison.OrdinalIgnoreCase)
                              && !string.IsNullOrWhiteSpace(v):
                     code = v.Trim();
                     break;
-                case 23 when k.Equals(DecisionBlocks.HeaderAttachments, StringComparison.OrdinalIgnoreCase):
+                case 20 when k.Equals(DecisionBlocks.HeaderAttachments, StringComparison.OrdinalIgnoreCase):
                     attachments = v;
                     break;
-                case 18 when k.Equals(DecisionBlocks.HeaderMemory, StringComparison.OrdinalIgnoreCase):
+                case 15 when k.Equals(DecisionBlocks.HeaderMemory, StringComparison.OrdinalIgnoreCase):
                     memory = v;
                     break;
-                case 22 when k.Equals(DecisionBlocks.HeaderInspection, StringComparison.OrdinalIgnoreCase):
+                case 19 when k.Equals(DecisionBlocks.HeaderInspection, StringComparison.OrdinalIgnoreCase):
                     inspection = v;
                     break;
             }
@@ -350,7 +350,7 @@ public sealed class ShashuDecision
 
     /// <summary>
     /// What happened to each attached file; null when the request had none.
-    /// Read off the body; off the <c>x-trustgate-attachments</c> counts when
+    /// Read off the body; off the <c>x-shashu-attachments</c> counts when
     /// the body carried no envelope. <see cref="global::Shashu.Attachments.Carrier"/>
     /// says which.
     /// </summary>
@@ -366,7 +366,7 @@ public sealed class ShashuDecision
     /// What the gateway inspected: <c>input</c>, <c>output</c>, <c>reason</c> and a
     /// <c>detectors</c> map of detector name to state (e.g. <c>memory</c> →
     /// <c>checked</c> / <c>partial</c> / <c>skipped</c>). Same shape off the body or the
-    /// <c>x-trustgate-inspection</c> header; read-only; states are raw strings. Null when
+    /// <c>x-shashu-inspection</c> header; read-only; states are raw strings. Null when
     /// neither carried one.
     /// </summary>
     public IReadOnlyDictionary<string, object>? Inspection { get; init; }

@@ -56,23 +56,23 @@ public class FileMemoryRouteTests
         var h = new Dictionary<string, string>
         {
             ["x-request-id"] = "b510c203",
-            ["x-trustgate-decision"] = decision,
-            ["x-trustgate-inspection"] = "input=checked;output=checked",
+            ["x-shashu-decision"] = decision,
+            ["x-shashu-inspection"] = "input=checked;output=checked",
             ["x-should-retry"] = "false",
         };
         if (code is not null)
-            h["x-trustgate-code"] = code;
+            h["x-shashu-code"] = code;
         for (var i = 0; i < extra.Length; i += 2)
             h[extra[i]] = extra[i + 1];
         return h;
     }
 
     private static string Ok(string decision, string? code, string? blocks) =>
-        "{" + Chat200 + ",\"trustgate\":" + Envelope(decision, code, blocks) + "}";
+        "{" + Chat200 + ",\"shashu\":" + Envelope(decision, code, blocks) + "}";
 
     private static string Refused(string code, string message, string blocks) =>
         "{\"error\":{\"message\":\"" + message + "\",\"type\":\"permission_error\",\"param\":null,\"code\":\"" + code
-        + "\",\"trustgate\":" + Envelope("refuse", code, blocks) + "},\"choices\":[]}";
+        + "\",\"shashu\":" + Envelope("refuse", code, blocks) + "},\"choices\":[]}";
 
     private sealed record Scenario(HttpStatusCode Status, string Body, Dictionary<string, string> Headers);
 
@@ -83,15 +83,15 @@ public class FileMemoryRouteTests
         ["file_flagged"] = new(HttpStatusCode.OK,
             Ok("not_checked", "attachment_uninspected", "\"attachments\":" + AttachmentsFlagged),
             Headers("not_checked", "attachment_uninspected",
-                "x-trustgate-attachments", "total=2;scanned=1;not_inspected=1;blocked=0")),
+                "x-shashu-attachments", "total=2;scanned=1;not_inspected=1;blocked=0")),
         ["file_blocked"] = new(HttpStatusCode.Forbidden,
             Refused("file_policy", "The file a.pdf declared one type and its contents matched another, so it was not forwarded.",
                 "\"attachments\":" + AttachmentsBlocked),
-            Headers("refuse", "file_policy", "x-trustgate-attachments", "total=1;scanned=0;not_inspected=0;blocked=1")),
+            Headers("refuse", "file_policy", "x-shashu-attachments", "total=1;scanned=0;not_inspected=0;blocked=1")),
         ["memory_blocked"] = new(HttpStatusCode.Forbidden,
             Refused("tool_policy", "A save through memory.write contained hidden instructions, so it was not stored.",
                 "\"memory\":" + MemoryBlocked),
-            Headers("refuse", "tool_policy", "x-trustgate-memory", "writes=1;blocked=1;recalls=0;flagged=0")),
+            Headers("refuse", "tool_policy", "x-shashu-memory", "writes=1;blocked=1;recalls=0;flagged=0")),
         ["route_blocked"] = new(HttpStatusCode.Forbidden,
             Refused("route_data_policy", "This request contains patient health information and route general-chat "
                 + "is not approved for it. Use a BAA-covered route.", "\"route_policy\":" + RoutePolicyJson),
@@ -99,8 +99,8 @@ public class FileMemoryRouteTests
         // A streaming / header-only reader: no envelope in the body, counts in headers.
         ["header_only"] = new(HttpStatusCode.OK, "{" + Chat200 + "}",
             Headers("not_checked", "attachment_uninspected",
-                "x-trustgate-attachments", "total=3;scanned=1;not_inspected=1;blocked=0",
-                "x-trustgate-memory", "writes=2;blocked=0;recalls=4;flagged=1")),
+                "x-shashu-attachments", "total=3;scanned=1;not_inspected=1;blocked=0",
+                "x-shashu-memory", "writes=2;blocked=0;recalls=4;flagged=1")),
     };
 
     private static ShashuDecision Read(string name)
@@ -123,7 +123,7 @@ public class FileMemoryRouteTests
     }
 
     [Fact]
-    public void Restore_key_is_readable_from_trustgate_extra_fields()
+    public void Restore_key_is_readable_from_shashu_extra_fields()
     {
         const string attachments =
             "{\"total\":1,\"scanned\":1,\"scanned_partial\":0,\"not_inspected\":0,\"blocked\":0,"
@@ -136,7 +136,7 @@ public class FileMemoryRouteTests
         Assert.NotNull(d!.Attachments);
         Assert.Equal("a.pdf", d.Attachments.Items[0].Filename);
         using var doc = System.Text.Json.JsonDocument.Parse(body);
-        var item = doc.RootElement.GetProperty("trustgate").GetProperty("attachments").GetProperty("items")[0];
+        var item = doc.RootElement.GetProperty("shashu").GetProperty("attachments").GetProperty("items")[0];
         Assert.Contains("This PDF contains placeholders", item.GetProperty("note").GetString());
         Assert.Equal("alice@corp.example", item.GetProperty("key")[0].GetProperty("value").GetString());
     }
@@ -198,7 +198,7 @@ public class FileMemoryRouteTests
         var s = Scenarios["file_flagged"];
         var h = new Dictionary<string, string>(s.Headers)
         {
-            ["x-trustgate-attachments"] = "total=9;scanned=9;not_inspected=0;blocked=0",
+            ["x-shashu-attachments"] = "total=9;scanned=9;not_inspected=0;blocked=0",
         };
         var d = Shashu.DecisionFrom(s.Body, h)!;
         Assert.Equal("body", d.Attachments!.Carrier);
@@ -293,10 +293,10 @@ public class FileMemoryRouteTests
         var env = Envelope("refuse", "made_up_code_zz",
             "\"attachments\":" + att + ",\"memory\":" + mem + ",\"route_policy\":" + route
             + ",\"made_up_top_level_field\":{\"nested\":[\"x\"]}");
-        var d = Shashu.DecisionFrom("{\"error\":{\"message\":\"m\",\"trustgate\":" + env + "}}",
+        var d = Shashu.DecisionFrom("{\"error\":{\"message\":\"m\",\"shashu\":" + env + "}}",
             Headers("refuse", "made_up_code_zz",
-                "x-trustgate-attachments", "total=2;scanned=1;not_inspected=1;blocked=0;made_up=4",
-                "x-trustgate-memory", "writes=1;blocked=1;made_up=9"))!;
+                "x-shashu-attachments", "total=2;scanned=1;not_inspected=1;blocked=0;made_up=4",
+                "x-shashu-memory", "writes=1;blocked=1;made_up=9"))!;
         Assert.Equal("made_up_code_zz", d.Code);
         var item = d.Attachments!.Items[0];
         Assert.Equal(AttachmentState.Unknown, item.State);
@@ -312,12 +312,12 @@ public class FileMemoryRouteTests
     [Fact]
     public void Tolerance_wrongly_typed_blocks_are_ignored_not_thrown()
     {
-        var d = Shashu.DecisionFrom("{\"trustgate\":" + Envelope("allow", null,
+        var d = Shashu.DecisionFrom("{\"shashu\":" + Envelope("allow", null,
             "\"attachments\":\"x\",\"memory\":[1],\"route_policy\":5") + "}", null)!;
         Assert.Null(d.Attachments);
         Assert.Null(d.Memory);
         Assert.Null(d.RoutePolicy);
-        d = Shashu.DecisionFrom("{\"trustgate\":" + Envelope("allow", null,
+        d = Shashu.DecisionFrom("{\"shashu\":" + Envelope("allow", null,
             "\"attachments\":{\"total\":\"two\",\"items\":[\"x\",null,{\"state\":3}]}") + "}", null)!;
         Assert.Equal(0, d.Attachments!.Total);
         Assert.Single(d.Attachments.Items);
@@ -329,8 +329,8 @@ public class FileMemoryRouteTests
     public void Tolerance_garbage_count_headers_are_ignored()
     {
         var d = Shashu.DecisionFrom(null, Headers("allow", null,
-            "x-trustgate-attachments", "total=;scanned=x;;=3",
-            "x-trustgate-memory", "nonsense"))!;
+            "x-shashu-attachments", "total=;scanned=x;;=3",
+            "x-shashu-memory", "nonsense"))!;
         Assert.Equal("allow", d.Decision);
         Assert.Null(d.Attachments);
         Assert.Null(d.Memory);

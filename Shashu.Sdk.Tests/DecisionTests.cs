@@ -19,7 +19,7 @@ public class DecisionTests
     [InlineData("fail")]
     public void DecisionFrom_body_surfaces_each_of_the_six(string decision)
     {
-        var body = $"{{\"trustgate\":{{\"decision\":\"{decision}\",\"retryable\":false,\"id\":\"i\"}}}}";
+        var body = $"{{\"shashu\":{{\"decision\":\"{decision}\",\"retryable\":false,\"id\":\"i\"}}}}";
         var read = Shashu.DecisionFrom(body, headers: null);
         Assert.NotNull(read);
         Assert.Equal(decision, read!.Decision);
@@ -36,7 +36,7 @@ public class DecisionTests
     {
         var headers = new Dictionary<string, string>
         {
-            ["x-trustgate-decision"] = decision,
+            ["x-shashu-decision"] = decision,
         };
         var read = Shashu.DecisionFrom(body: null, headers);
         Assert.NotNull(read);
@@ -76,7 +76,7 @@ public class DecisionTests
     [InlineData("brand_new_this_week", true)]
     public void IsBlock_reads_decision_only_and_fails_closed(string decision, bool blocked)
     {
-        var body = $"{{\"trustgate\":{{\"decision\":\"{decision}\"}}}}";
+        var body = $"{{\"shashu\":{{\"decision\":\"{decision}\"}}}}";
         Assert.Equal(blocked, Shashu.IsBlock(body));
     }
 
@@ -101,7 +101,7 @@ public class DecisionTests
     [InlineData("fail", false)]
     public void Refuse_and_fail_are_not_content_blocks(string decision, bool blocked)
     {
-        var body = $"{{\"trustgate\":{{\"decision\":\"{decision}\"}}}}";
+        var body = $"{{\"shashu\":{{\"decision\":\"{decision}\"}}}}";
         Assert.Equal(blocked, Shashu.IsBlock(body));
     }
 
@@ -115,14 +115,14 @@ public class DecisionTests
     [InlineData("allow", "also_brand_new", false)]
     public void Unknown_code_does_not_override_decision_fail_closed(string decision, string code, bool blocked)
     {
-        var body = $"{{\"trustgate\":{{\"decision\":\"{decision}\",\"code\":\"{code}\"}}}}";
+        var body = $"{{\"shashu\":{{\"decision\":\"{decision}\",\"code\":\"{code}\"}}}}";
         Assert.Equal(blocked, Shashu.IsBlock(body));
     }
 
     [Fact]
     public void Nested_error_trustgate_is_the_error_carrier()
     {
-        var body = "{\"error\":{\"type\":\"content_filter\",\"trustgate\":{\"decision\":\"block\",\"code\":\"jailbreak\"}}}";
+        var body = "{\"error\":{\"type\":\"content_filter\",\"shashu\":{\"decision\":\"block\",\"code\":\"jailbreak\"}}}";
         var read = Shashu.DecisionFrom(body, headers: null);
         Assert.Equal("block", read!.Decision);
         Assert.Equal("jailbreak", read.Code);
@@ -132,7 +132,7 @@ public class DecisionTests
     [Fact]
     public void Envelope_without_a_readable_decision_fails_closed()
     {
-        var body = "{\"trustgate\":{\"retryable\":false}}";
+        var body = "{\"shashu\":{\"retryable\":false}}";
         Assert.Null(Shashu.DecisionFrom(body, headers: null));
         Assert.True(Shashu.IsBlock(body));
     }
@@ -152,7 +152,7 @@ public class DecisionTests
         {
             ExtraFields = new Dictionary<string, System.Text.Json.JsonElement>
             {
-                ["trustgate"] = System.Text.Json.JsonDocument.Parse(
+                ["shashu"] = System.Text.Json.JsonDocument.Parse(
                     "{\"decision\":\"allow_altered\",\"code\":\"dlp\"}").RootElement.Clone(),
             },
         };
@@ -168,7 +168,7 @@ public class DecisionTests
         {
             ShashuHeaders = new Dictionary<string, string>
             {
-                ["x-trustgate-decision"] = "refuse",
+                ["x-shashu-decision"] = "refuse",
             },
         };
         var read = Shashu.DecisionOf(resp);

@@ -36,7 +36,7 @@ dotnet pack Shashu.Sdk\Shashu.Sdk.csproj -c Release --no-build -o $nupkgDir
 if ($LASTEXITCODE -ne 0) { throw "pack" }
 
 Write-Host "== nupkg contents =="
-$nupkg = Get-ChildItem "$nupkgDir\Shashu.Sdk.1.0.0.nupkg" | Select-Object -First 1
+$nupkg = Get-ChildItem "$nupkgDir\Shashu.Sdk.1.1.0.nupkg" | Select-Object -First 1
 $zip = Join-Path $env:TEMP "shashu-sdk-nupkg.zip"
 $tmp = Join-Path $env:TEMP "shashu-nupkg-check"
 Copy-Item $nupkg.FullName $zip -Force

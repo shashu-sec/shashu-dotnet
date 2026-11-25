@@ -28,7 +28,7 @@ internal sealed class ShashuApi
 
     /// <summary>
     /// This agent's OWN id (ADR-007 §4.1). Seeded from <see cref="ShashuConfig.AgentId"/>
-    /// and refreshed from each gateway response's <c>x-trustgate-agent-id</c> header (read on
+    /// and refreshed from each gateway response's <c>x-shashu-agent-id</c> header (read on
     /// EVERY response, including non-2xx). Used by <see cref="ShashuClient.BuildInvocationHeaders"/>
     /// to stamp caller = self on a downstream invocation — never sent as the gateway call's
     /// caller. Advisory lineage, never auth.
@@ -60,13 +60,13 @@ internal sealed class ShashuApi
     }
 
     /// <summary>
-    /// Cache this agent's own id from the gateway's <c>x-trustgate-agent-id</c> response
+    /// Cache this agent's own id from the gateway's <c>x-shashu-agent-id</c> response
     /// header, when present. Called on EVERY response (success + error) so even a blocked
     /// response seeds the self-id for the next A2A invocation. Fail-soft: never throws.
     /// </summary>
     private void CaptureAgentId(HttpResponseMessage response)
     {
-        if (response.Headers.TryGetValues("x-trustgate-agent-id", out var values))
+        if (response.Headers.TryGetValues("x-shashu-agent-id", out var values))
         {
             var aid = values.FirstOrDefault();
             if (!string.IsNullOrEmpty(aid))
@@ -240,7 +240,7 @@ internal sealed class ShashuApi
     }
 
     /// <summary>The request header <see cref="ShashuConfig.ContractVersion"/> is sent under.</summary>
-    internal const string ContractVersionHeader = "trustgate-version";
+    internal const string ContractVersionHeader = "shashu-version";
 
     /// <summary>
     /// Per-request is an instruction that wins; a captured inbound session
@@ -321,19 +321,21 @@ internal sealed class ShashuApi
                 // retry 429 only. 5xx is NOT retried by default — the gateway already
                 // retries upstream providers; LegacyRetryPolicy restores 5xx retries.
                 var is5xx = status >= 500 && status < 600;
-                var retryable = status == 429 || (_options.LegacyRetryPolicy && is5xx);
+                var invited = TruthyHeader(response, "x-should-retry")
+                    || TryGetRetryAfterMs(response, out _);
+                var busy = (status == 429 || status == 503) && invited;
+                var retryable = busy || (_options.LegacyRetryPolicy && is5xx && status != 503);
 
-                if (!retryable || attempt >= _options.MaxRetries)
+                if (_options.MaxRetries <= 0 || !retryable || attempt >= _options.MaxRetries)
                 {
                     throw ShashuException.FromResponse(status, rawError, CaptureShashuHeaders(response));
                 }
 
-                // Honor Retry-After on 429 (unless legacy mode); otherwise exponential backoff.
                 int delayMs;
-                if (status == 429 && !_options.LegacyRetryPolicy && TryGetRetryAfterMs(response, out var retryAfterMs))
-                    delayMs = retryAfterMs;
+                if (busy && !_options.LegacyRetryPolicy && TryGetRetryAfterMs(response, out var retryAfterMs))
+                    delayMs = WithJitter(retryAfterMs);
                 else
-                    delayMs = BackoffMs(attempt);
+                    delayMs = WithJitter(BackoffMs(attempt));
 
                 await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
                 attempt++;
@@ -347,7 +349,7 @@ internal sealed class ShashuApi
         foreach (var header in response.Headers)
         {
             var name = header.Key;
-            if (name.StartsWith("x-trustgate-", StringComparison.OrdinalIgnoreCase)
+            if (name.StartsWith("x-shashu-", StringComparison.OrdinalIgnoreCase)
                 || name.Equals("x-should-retry", StringComparison.OrdinalIgnoreCase)
                 || name.Equals("x-request-id", StringComparison.OrdinalIgnoreCase))
             {
@@ -372,6 +374,24 @@ internal sealed class ShashuApi
     /// <summary>Exponential backoff with jitter: 250ms, 500ms, 1s, capped at 2s.</summary>
     private static int BackoffMs(int attempt) =>
         Math.Min(2000, 250 * (1 << attempt)) + Random.Shared.Next(0, 100);
+
+    private static bool TruthyHeader(HttpResponseMessage response, string name)
+    {
+        if (!response.Headers.TryGetValues(name, out var values))
+            return false;
+        var raw = string.Join(",", values).Trim();
+        return raw.Equals("1", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("true", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("yes", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("on", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static int WithJitter(int millis)
+    {
+        var capped = Math.Min(30_000, Math.Max(0, millis));
+        var extra = (int)(capped * 0.2 * Random.Shared.NextDouble());
+        return Math.Min(30_000, capped + extra);
+    }
 
     /// <summary>
     /// Parse the <c>Retry-After</c> header (delta-seconds or HTTP-date) into a
@@ -430,7 +450,7 @@ public class ShashuException : Exception
     public string ResponseBody { get; }
 
     /// <summary>
-    /// <c>x-trustgate-*</c> (and sibling) response headers, when captured.
+    /// <c>x-shashu-*</c> (and sibling) response headers, when captured.
     /// Absence is today's behaviour — the dictionary is empty, not null.
     /// </summary>
     public IReadOnlyDictionary<string, string> ResponseHeaders { get; protected set; }
@@ -476,7 +496,7 @@ public class ShashuException : Exception
     ///         <see cref="ShashuContentFilterException"/>.</item>
     ///   <item>everything else → <see cref="ShashuException"/>, whose
     ///         message is the gateway's <c>error.message</c> when the body
-    ///         carries the decision (<c>error.trustgate</c>), and
+    ///         carries the decision (<c>error.shashu</c>), and
     ///         "Shashu request failed with HTTP n: …" otherwise.</item>
     /// </list>
     ///
@@ -567,7 +587,7 @@ public class ShashuException : Exception
 
     /// <summary>
     /// The plain-English sentence of a gateway refusal served under a contract
-    /// version: <c>error.message</c>, but only when <c>error.trustgate</c> is
+    /// version: <c>error.message</c>, but only when <c>error.shashu</c> is
     /// there to say the gateway wrote it (a 402 plan limit, a 429 quota, a 503
     /// fail-closed inspection, …). Anything else keeps the raw-body message,
     /// so a provider or proxy error is never dressed up as ours.
@@ -582,7 +602,7 @@ public class ShashuException : Exception
             if (doc.RootElement.ValueKind == JsonValueKind.Object
                 && doc.RootElement.TryGetProperty("error", out var errEl)
                 && errEl.ValueKind == JsonValueKind.Object
-                && errEl.TryGetProperty("trustgate", out var tg)
+                && errEl.TryGetProperty("shashu", out var tg)
                 && tg.ValueKind == JsonValueKind.Object
                 && errEl.TryGetProperty("message", out var msgEl)
                 && msgEl.ValueKind == JsonValueKind.String
@@ -660,7 +680,7 @@ public class ShashuException : Exception
 /// receives. Under the contract version this SDK sends by default the same
 /// refusal carries <c>"type": "permission_error"</c>, a reason in
 /// <c>"code"</c> (<c>feature_disabled</c>, <c>tool_policy</c>, …) and the
-/// decision nested in <c>error.trustgate</c>. Access decision on <c>/v1/chat/completions</c>, <c>/v1/completions</c>,
+/// decision nested in <c>error.shashu</c>. Access decision on <c>/v1/chat/completions</c>, <c>/v1/completions</c>,
 /// <c>/v1/responses</c> and <c>/v1/conversations</c>:</para>
 /// <code>
 /// {
@@ -795,7 +815,7 @@ public sealed class MemoryWriteBlocked : ShashuPolicyViolation
 ///     "type": "content_filter",
 ///     "param": null,
 ///     "code": "jailbreak",
-///     "trustgate": { "decision": "block", "code": "jailbreak", ... }
+///     "shashu": { "decision": "block", "code": "jailbreak", ... }
 ///   },
 ///   "choices": []
 /// }
@@ -887,7 +907,7 @@ public sealed class ShashuContentFilterException : ShashuException
                     message = text;
                 }
             }
-            if (doc.RootElement.TryGetProperty("trustgate", out var tg)
+            if (doc.RootElement.TryGetProperty("shashu", out var tg)
                 && tg.ValueKind == JsonValueKind.Object
                 && tg.TryGetProperty("code", out var codeEl)
                 && codeEl.ValueKind == JsonValueKind.String)

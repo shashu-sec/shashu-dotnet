@@ -5,7 +5,7 @@ using Shashu.Tracing;
 namespace Shashu.Context;
 
 /// <summary>
-/// Builds the <c>x-trustgate-*</c> + <c>x-trustlog-*</c> headers that
+/// Builds the <c>x-shashu-*</c> + <c>x-trustlog-*</c> headers that
 /// give the gateway Shadow AI attribution and runtime context for every
 /// request. The Python SDK calls the same logic
 /// <c>build_trustgate_headers()</c>; we keep the produced header map
@@ -14,23 +14,23 @@ namespace Shashu.Context;
 /// <remarks>
 /// <para>What gets emitted:</para>
 /// <list type="bullet">
-///   <item><c>x-trustgate-source</c> — one of <c>n8n</c>, <c>github_actions</c>,
+///   <item><c>x-shashu-source</c> — one of <c>n8n</c>, <c>github_actions</c>,
 ///         <c>gitlab_ci</c>, <c>local_script</c>. Drives the gateway's
 ///         Shadow AI source-tool taxonomy.</item>
-///   <item><c>x-trustgate-trace-id</c> — the workflow's trace id. Comes from
+///   <item><c>x-shashu-trace-id</c> — the workflow's trace id. Comes from
 ///         <c>N8N_EXECUTION_ID</c> / <c>GITHUB_RUN_ID</c> / <c>CI_PIPELINE_ID</c>
 ///         when running in a managed environment; otherwise a fresh GUID per
 ///         build.</item>
-///   <item><c>x-trustgate-workflow-name</c> — set when running inside a
+///   <item><c>x-shashu-workflow-name</c> — set when running inside a
 ///         managed workflow (n8n workflow name, GitHub workflow name, GitLab
 ///         job name).</item>
-///   <item><c>x-trustgate-workflow-step</c> — caller can pass an explicit
+///   <item><c>x-shashu-workflow-step</c> — caller can pass an explicit
 ///         step (e.g. <c>"Data_Extraction"</c>) to drive the Gantt;
 ///         auto-detected from <c>N8N_NODE_NAME</c> / <c>N8N_NODE_ID</c>.</item>
 ///   <item><c>x-trustlog-os</c>, <c>x-trustlog-arch</c>,
 ///         <c>x-trustlog-runtime-version</c> — runtime metadata for the
 ///         gateway's deployment + capacity reports.</item>
-///   <item><c>x-trustgate-source-tool</c> — JSON blob describing the
+///   <item><c>x-shashu-source-tool</c> — JSON blob describing the
 ///         calling SDK + version + system info. Free-form by design so we
 ///         can extend without breaking the contract.</item>
 /// </list>
@@ -44,7 +44,7 @@ public static class WorkflowContext
     /// when no managed-workflow trace exists.
     /// </summary>
     /// <param name="workflowStep">Optional explicit workflow step. Wins over auto-detection.</param>
-    /// <param name="sourceToolOverrides">Extra fields merged into the <c>x-trustgate-source-tool</c> JSON blob.</param>
+    /// <param name="sourceToolOverrides">Extra fields merged into the <c>x-shashu-source-tool</c> JSON blob.</param>
     /// <param name="sessionId">
     /// Session to stamp. The caller resolved precedence; this method does
     /// not mint. Emitted whenever non-empty, at origin and mid-flow.
@@ -61,18 +61,18 @@ public static class WorkflowContext
 
         var headers = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["x-trustgate-source"] = source,
-            ["x-trustgate-trace-id"] = traceId,
+            ["x-shashu-source"] = source,
+            ["x-shashu-trace-id"] = traceId,
             ["x-trustlog-os"] = RuntimeInformation.OSDescription,
             ["x-trustlog-arch"] = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant(),
             ["x-trustlog-runtime-version"] = Environment.Version.ToString(),
         };
 
         if (!string.IsNullOrEmpty(workflowName))
-            headers["x-trustgate-workflow-name"] = workflowName;
+            headers["x-shashu-workflow-name"] = workflowName;
 
         if (!string.IsNullOrEmpty(step))
-            headers["x-trustgate-workflow-step"] = step!;
+            headers["x-shashu-workflow-step"] = step!;
 
         // Source-tool metadata: SDK identification + system info. Same shape
         // as Python's get_source_tool_metadata().
@@ -91,7 +91,7 @@ public static class WorkflowContext
             foreach (var kv in sourceToolOverrides)
                 metadata[kv.Key] = kv.Value;
         }
-        headers["x-trustgate-source-tool"] = JsonSerializer.Serialize(metadata);
+        headers["x-shashu-source-tool"] = JsonSerializer.Serialize(metadata);
 
         // Tracer integration: when a span is active, OVERRIDE the
         // workflow's trace id with the span's id and emit span/parent
@@ -99,14 +99,14 @@ public static class WorkflowContext
         // Python SDK's contract.
         if (Tracer.IsActive && Tracer.TraceId is { } activeTrace)
         {
-            headers["x-trustgate-trace-id"] = activeTrace;
-            headers["x-trustgate-span-id"] = Tracer.CurrentSpanId ?? string.Empty;
-            headers["x-trustgate-parent-id"] = Tracer.ParentSpanId ?? string.Empty;
+            headers["x-shashu-trace-id"] = activeTrace;
+            headers["x-shashu-span-id"] = Tracer.CurrentSpanId ?? string.Empty;
+            headers["x-shashu-parent-id"] = Tracer.ParentSpanId ?? string.Empty;
         }
         else if (Tracer.IsA2aHop && Tracer.TraceId is { } flowTrace)
         {
             // Mid-flow without a span: PROPAGATE the captured trace (do NOT mint a new one).
-            headers["x-trustgate-trace-id"] = flowTrace;
+            headers["x-shashu-trace-id"] = flowTrace;
         }
 
         // A2A OUTBOUND PROPAGATION (WP-A2A-4 / ADR-007 §0, §4.1 LOCKED). Only mid-flow
@@ -124,13 +124,13 @@ public static class WorkflowContext
         // construction-time default). Build() itself does not mint.
         var session = sessionId ?? (Tracer.IsA2aHop ? Tracer.SessionId : null);
         if (!string.IsNullOrEmpty(session))
-            headers["x-trustgate-session-id"] = session;
+            headers["x-shashu-session-id"] = session;
 
         if (Tracer.IsA2aHop)
         {
             if (Tracer.InboundCallerAgentId is { } inboundCaller)
-                headers["x-trustgate-caller-agent-id"] = inboundCaller;
-            headers["x-trustgate-hop-depth"] =
+                headers["x-shashu-caller-agent-id"] = inboundCaller;
+            headers["x-shashu-hop-depth"] =
                 Tracer.OutboundHopDepth.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
@@ -168,12 +168,12 @@ public static class WorkflowContext
 
         var headers = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["x-trustgate-trace-id"] = trace,
-            ["x-trustgate-caller-agent-id"] = callerAgentId,
-            ["x-trustgate-hop-depth"] = hop.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["x-shashu-trace-id"] = trace,
+            ["x-shashu-caller-agent-id"] = callerAgentId,
+            ["x-shashu-hop-depth"] = hop.ToString(System.Globalization.CultureInfo.InvariantCulture),
         };
         if (!string.IsNullOrEmpty(session))
-            headers["x-trustgate-session-id"] = session!;
+            headers["x-shashu-session-id"] = session!;
         return headers;
     }
 

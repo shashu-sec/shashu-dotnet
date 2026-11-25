@@ -18,7 +18,7 @@ namespace Shashu.Internal;
 ///   the bytes on the wire are the bytes the unpatched handler produced —
 ///   asserted byte-for-byte in the harness.</description></item>
 ///   <item><description><b>Explicit always wins.</b> A body already carrying
-///   <c>trustgate_metadata.rag_context</c> is left exactly as the caller built
+///   <c>shashu_metadata.rag_context</c> is left exactly as the caller built
 ///   it. The ambient declaration is consumed and discarded, not deferred: a
 ///   declaration that lost this call must not turn up on the next
 ///   one.</description></item>
@@ -93,7 +93,7 @@ internal static class RetrievalJoiner
         }
         if (parsed is not JsonObject body) return;
 
-        var existing = body["trustgate_metadata"] as JsonObject;
+        var existing = body["shashu_metadata"] as JsonObject;
         var explicitRag = existing?["rag_context"] is not null;
         var explicitMem = existing?["memory_context"] is not null;
         if (explicitRag) RetrievalBus.ClearRetrieval();
@@ -103,10 +103,10 @@ internal static class RetrievalJoiner
         var memoryContext = explicitMem ? null : MemoryContextBuilder.Build(RetrievalBus.TakeMemory());
         if (context is null && memoryContext is null) return;
 
-        if (body["trustgate_metadata"] is not JsonObject metadata)
+        if (body["shashu_metadata"] is not JsonObject metadata)
         {
             metadata = new JsonObject();
-            body["trustgate_metadata"] = metadata;
+            body["shashu_metadata"] = metadata;
         }
         if (context is not null)
             metadata["rag_context"] = JsonSerializer.SerializeToNode(context);

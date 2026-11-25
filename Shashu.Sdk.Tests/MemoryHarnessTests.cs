@@ -29,7 +29,7 @@ public class MemoryHarnessTests
                 new JsonObject { ["role"] = "user", ["content"] = "hello" }),
         };
         if (extra is not null)
-            body["trustgate_metadata"] = extra;
+            body["shashu_metadata"] = extra;
         return new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
         {
             Content = new StringContent(

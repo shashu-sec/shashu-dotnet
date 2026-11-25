@@ -2,7 +2,7 @@ namespace Shashu;
 
 /// <summary>
 /// Thrown when no gateway address resolves — neither an explicit option nor
-/// the <c>TRUSTGATE_BASE_URL</c> environment variable.
+/// the <c>SHASHU_BASE_URL</c> environment variable.
 /// </summary>
 /// <remarks>
 /// <para>The SDK has no default address and will not guess one. Shashu is

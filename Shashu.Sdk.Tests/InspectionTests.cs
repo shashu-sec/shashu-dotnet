@@ -9,12 +9,12 @@ namespace Shashu.Tests;
 /// Sibling of the Python SDK's <c>Decision.inspection</c> and the Node SDK's
 /// <c>decision.inspection</c>: the same shape — <c>input</c>, <c>output</c>,
 /// <c>reason</c> and a <c>detectors</c> map — whether it was read off the body
-/// or off the <c>x-trustgate-inspection</c> header.
+/// or off the <c>x-shashu-inspection</c> header.
 /// </remarks>
 public class InspectionTests
 {
     private static string Body(string? inspection) =>
-        "{\"trustgate\":{\"decision\":\"allow\",\"id\":\"r1\""
+        "{\"shashu\":{\"decision\":\"allow\",\"id\":\"r1\""
         + (inspection is null ? "" : ",\"inspection\":" + inspection) + "}}";
 
     private static string? MemoryState(ShashuDecision d) =>
@@ -39,8 +39,8 @@ public class InspectionTests
     {
         var d = Shashu.DecisionFrom(body: null, new Dictionary<string, string>
         {
-            ["x-trustgate-decision"] = "allow",
-            ["x-trustgate-inspection"] = "input=checked;output=skipped;reason=adapter_unreachable;memory=partial",
+            ["x-shashu-decision"] = "allow",
+            ["x-shashu-inspection"] = "input=checked;output=skipped;reason=adapter_unreachable;memory=partial",
         })!;
         Assert.Equal("partial", MemoryState(d));
         Assert.Equal("skipped", d.Inspection!["output"]);

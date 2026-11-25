@@ -29,7 +29,7 @@ public sealed class ShashuClient : IAsyncDisposable, IDisposable
     /// User-Agent so server-side telemetry can attribute traffic to a
     /// specific SDK version.
     /// </summary>
-    public const string SdkVersion = "1.0.0";
+    public const string SdkVersion = "1.1.0";
 
     private readonly HttpClient _http;
     private readonly bool _ownsHttp;
@@ -102,7 +102,7 @@ public sealed class ShashuClient : IAsyncDisposable, IDisposable
     /// <summary>
     /// This agent's own id, as known so far — seeded from
     /// <see cref="ShashuConfig.AgentId"/> and refreshed from each gateway
-    /// response's <c>x-trustgate-agent-id</c> header. Null until known.
+    /// response's <c>x-shashu-agent-id</c> header. Null until known.
     /// </summary>
     public string? AgentId => _api.AgentId;
 
@@ -122,7 +122,7 @@ public sealed class ShashuClient : IAsyncDisposable, IDisposable
     /// responses); trace / hop / session default from the tracer so the served flow is
     /// propagated. The downstream agent calls <c>Tracer.CaptureIncoming(...)</c> on these
     /// headers. Throws if the self-id is not known yet — set the <c>AgentId</c> option or
-    /// make one gateway call first so the <c>x-trustgate-agent-id</c> response header can seed it.
+    /// make one gateway call first so the <c>x-shashu-agent-id</c> response header can seed it.
     /// </summary>
     public Dictionary<string, string> BuildInvocationHeaders(
         string? traceId = null, string? sessionId = null, int? hopDepth = null)
@@ -131,7 +131,7 @@ public sealed class ShashuClient : IAsyncDisposable, IDisposable
         {
             throw new InvalidOperationException(
                 "Self agent id is unknown — set ShashuConfig.AgentId or make one "
-                + "gateway call first so the x-trustgate-agent-id response header can seed it.");
+                + "gateway call first so the x-shashu-agent-id response header can seed it.");
         }
         return Context.WorkflowContext.BuildInvocationHeaders(
             _api.AgentId!, traceId, sessionId, hopDepth);

@@ -11,7 +11,7 @@ namespace Shashu.Tests;
 
 /// <summary>
 /// Verifies <see cref="WorkflowContext"/> emits the right
-/// <c>x-trustgate-*</c> headers for each Shadow AI runtime
+/// <c>x-shashu-*</c> headers for each Shadow AI runtime
 /// (n8n / GitHub Actions / GitLab CI / local), and that the SDK's
 /// request plumbing applies them to every outbound call.
 ///
@@ -62,8 +62,8 @@ public class WorkflowContextTests
         Assert.Equal("n8n", WorkflowContext.DetectSource());
 
         var headers = WorkflowContext.Build();
-        Assert.Equal("n8n", headers["x-trustgate-source"]);
-        Assert.Equal("exec-12345", headers["x-trustgate-trace-id"]);
+        Assert.Equal("n8n", headers["x-shashu-source"]);
+        Assert.Equal("exec-12345", headers["x-shashu-trace-id"]);
     }
 
     [Fact]
@@ -74,9 +74,9 @@ public class WorkflowContextTests
             ("GITHUB_RUN_ID", "987654321"),
             ("GITHUB_WORKFLOW", "build"));
         var headers = WorkflowContext.Build();
-        Assert.Equal("github_actions", headers["x-trustgate-source"]);
-        Assert.Equal("987654321", headers["x-trustgate-trace-id"]);
-        Assert.Equal("build", headers["x-trustgate-workflow-name"]);
+        Assert.Equal("github_actions", headers["x-shashu-source"]);
+        Assert.Equal("987654321", headers["x-shashu-trace-id"]);
+        Assert.Equal("build", headers["x-shashu-workflow-name"]);
     }
 
     [Fact]
@@ -87,9 +87,9 @@ public class WorkflowContextTests
             ("CI_PIPELINE_ID", "pipeline-42"),
             ("CI_JOB_NAME", "deploy"));
         var headers = WorkflowContext.Build();
-        Assert.Equal("gitlab_ci", headers["x-trustgate-source"]);
-        Assert.Equal("pipeline-42", headers["x-trustgate-trace-id"]);
-        Assert.Equal("deploy", headers["x-trustgate-workflow-name"]);
+        Assert.Equal("gitlab_ci", headers["x-shashu-source"]);
+        Assert.Equal("pipeline-42", headers["x-shashu-trace-id"]);
+        Assert.Equal("deploy", headers["x-shashu-workflow-name"]);
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class WorkflowContextTests
             ("N8N_EXECUTION_ID", "exec-1"),
             ("N8N_NODE_NAME", "Data_Extraction"));
         var headers = WorkflowContext.Build();
-        Assert.Equal("Data_Extraction", headers["x-trustgate-workflow-step"]);
+        Assert.Equal("Data_Extraction", headers["x-shashu-workflow-step"]);
     }
 
     [Fact]
@@ -121,15 +121,15 @@ public class WorkflowContextTests
             ("N8N_EXECUTION_ID", "exec-1"),
             ("N8N_NODE_NAME", "auto_detected"));
         var headers = WorkflowContext.Build(workflowStep: "Caller_Override");
-        Assert.Equal("Caller_Override", headers["x-trustgate-workflow-step"]);
+        Assert.Equal("Caller_Override", headers["x-shashu-workflow-step"]);
     }
 
     [Fact]
     public void Local_script_emits_fresh_trace_id_per_call()
     {
         using var env = SetEnv();
-        var first = WorkflowContext.Build()["x-trustgate-trace-id"];
-        var second = WorkflowContext.Build()["x-trustgate-trace-id"];
+        var first = WorkflowContext.Build()["x-shashu-trace-id"];
+        var second = WorkflowContext.Build()["x-shashu-trace-id"];
         Assert.NotEqual(first, second);
         // Trace ids should look like a 32-char GUID (no dashes) in this SDK.
         Assert.Equal(32, first.Length);
@@ -140,7 +140,7 @@ public class WorkflowContextTests
     {
         using var env = SetEnv();
         var headers = WorkflowContext.Build();
-        var blob = headers["x-trustgate-source-tool"];
+        var blob = headers["x-shashu-source-tool"];
         using var doc = JsonDocument.Parse(blob);
         Assert.Equal("shashu-dotnet", doc.RootElement.GetProperty("sdk").GetString());
         Assert.Equal("dotnet", doc.RootElement.GetProperty("language").GetString());
@@ -168,10 +168,10 @@ public class WorkflowContextTests
         });
 
         Assert.NotNull(capture.LastRequest);
-        Assert.Equal("n8n", capture.LastRequest!.Headers.GetValues("x-trustgate-source").Single());
-        Assert.Equal("exec-from-test", capture.LastRequest.Headers.GetValues("x-trustgate-trace-id").Single());
-        Assert.Equal("test_step", capture.LastRequest.Headers.GetValues("x-trustgate-workflow-step").Single());
-        Assert.True(capture.LastRequest.Headers.Contains("x-trustgate-source-tool"));
+        Assert.Equal("n8n", capture.LastRequest!.Headers.GetValues("x-shashu-source").Single());
+        Assert.Equal("exec-from-test", capture.LastRequest.Headers.GetValues("x-shashu-trace-id").Single());
+        Assert.Equal("test_step", capture.LastRequest.Headers.GetValues("x-shashu-workflow-step").Single());
+        Assert.True(capture.LastRequest.Headers.Contains("x-shashu-source-tool"));
     }
 }
 

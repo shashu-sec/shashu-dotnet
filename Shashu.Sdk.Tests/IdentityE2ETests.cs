@@ -5,8 +5,7 @@ using Xunit;
 namespace Shashu.Tests;
 
 /// <summary>
-/// Live SHASHU proof. Skipped unless SHASHU_E2E_BASE_URL is set — typically by
-/// <c>_internal/identity-i4-i5/e2e_real_stack.py</c> after it boots the throwaway stack.
+/// Live SHASHU proof. Skipped unless SHASHU_E2E_BASE_URL is set (throwaway stack).
 /// </summary>
 [Trait("Category", "e2e")]
 public class IdentityE2ETests

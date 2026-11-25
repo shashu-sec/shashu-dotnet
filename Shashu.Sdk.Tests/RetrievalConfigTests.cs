@@ -20,10 +20,10 @@ namespace Shashu.Tests;
 [Collection(EnvironmentCollection.Name)]
 public class RetrievalConfigTests
 {
-    // ----------------------------------------------------- 9. TRUSTGATE_DISABLE
+    // ----------------------------------------------------- 9. SHASHU_DISABLE
 
     [Fact]
-    public async Task Case09_TRUSTGATE_DISABLE_makes_the_bus_joiner_and_declaration_inert()
+    public async Task Case09_SHASHU_DISABLE_makes_the_bus_joiner_and_declaration_inert()
     {
         // RED-FIRST: reddened by mutating Retrieval.DeclareRetrieval to drop its
         // `if (ShashuEnv.IsDisabled()) return;` guard ("ignore-disable").
@@ -111,7 +111,7 @@ public class RetrievalConfigTests
     public void Case10_An_unset_address_throws_rather_than_guessing_a_host()
     {
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        using var __ = new EnvVar(ShashuEnv.BaseUrlEnvLegacy, null);
+        using var __ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
 
         var ex = Assert.Throws<ShashuConfigException>(() =>
             new ShashuClient(new ShashuConfig { ApiKey = "sk-trustgate-test" }));
@@ -123,7 +123,7 @@ public class RetrievalConfigTests
     public void Case10_The_routing_handler_throws_on_an_unset_address_too()
     {
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        using var __ = new EnvVar(ShashuEnv.BaseUrlEnvLegacy, null);
+        using var __ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
 
         var ex = Assert.Throws<ShashuConfigException>(() =>
             new ShashuRoutingHandler("sk-trustgate-test"));
@@ -136,13 +136,13 @@ public class RetrievalConfigTests
     public void Case10_The_message_names_the_env_var_and_contains_no_hostname()
     {
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        using var __ = new EnvVar(ShashuEnv.BaseUrlEnvLegacy, null);
+        using var __ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
 
         var message = Assert.Throws<ShashuConfigException>(() =>
             new ShashuClient(new ShashuConfig { ApiKey = "sk-trustgate-test" })).Message;
 
         Assert.Contains("SHASHU_BASE_URL", message, StringComparison.Ordinal);
-        Assert.Contains("TRUSTGATE_BASE_URL", message, StringComparison.Ordinal);
+        Assert.Contains("SHASHU_BASE_URL", message, StringComparison.Ordinal);
 
         foreach (var fragment in new[]
                  {
@@ -180,7 +180,7 @@ public class RetrievalConfigTests
     public void ShashuConfigException_is_catchable_as_ShashuException()
     {
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        using var __ = new EnvVar(ShashuEnv.BaseUrlEnvLegacy, null);
+        using var __ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
 
         // A caller with one catch around their gateway calls still catches it.
         var ex = Assert.Throws<ShashuConfigException>(() =>
@@ -200,8 +200,8 @@ public class RetrievalConfigTests
     {
         Assert.Equal(
             $"SHASHU gateway address is not configured, so {entryPoint} has "
-            + $"nothing to route to. Pass {argument} to {entryPoint}, or set one of the "
-            + "SHASHU_BASE_URL or TRUSTGATE_BASE_URL environment variables. SHASHU is self-hosted: the "
+            + $"nothing to route to. Pass {argument} to {entryPoint}, or set the "
+            + "SHASHU_BASE_URL environment variable. SHASHU is self-hosted: the "
             + "SDK has no default address and will not guess one.",
             message);
     }

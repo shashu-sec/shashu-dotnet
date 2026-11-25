@@ -8,7 +8,7 @@ using Shashu.Tests.Harness;
 namespace Shashu.Tests;
 
 /// <summary>
-/// The 200-encoded block. This SDK sends <c>trustgate-version: 2026-09-01</c>
+/// The 200-encoded block. This SDK sends <c>shashu-version: 2026-09-01</c>
 /// by default, where a block is a 400; the 200 shape is still what the gateway
 /// serves on the <c>compatible</c> encoding, or on the legacy contract to a
 /// client that sets <see cref="ShashuConfig.ContractVersion"/> to

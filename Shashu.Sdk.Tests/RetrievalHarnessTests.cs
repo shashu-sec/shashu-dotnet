@@ -73,19 +73,19 @@ public class RetrievalHarnessTests
     // ------------------------------------------------------- 1. NEGATIVE
 
     [Fact]
-    public async Task Case01_No_declaration_means_no_trustgate_metadata_at_all()
+    public async Task Case01_No_declaration_means_no_shashu_metadata_at_all()
     {
         // RED-FIRST: reddened by mutating RetrievalJoiner.JoinAsync's guard from
         // `if (!RetrievalBus.HasEvents()) return;` to always continue and attach
         // an empty-docs context ("always-attach"). With that mutation the
-        // request carries trustgate_metadata and this fails.
+        // request carries shashu_metadata and this fails.
         RetrievalBus.Clear();
 
         var recorded = await SendOne("no retrieval here");
 
         Assert.False(recorded.HasShashuMetadata);
         Assert.Null(recorded.RagContext);
-        Assert.DoesNotContain("trustgate_metadata", Encoding.UTF8.GetString(recorded.Body));
+        Assert.DoesNotContain("shashu_metadata", Encoding.UTF8.GetString(recorded.Body));
     }
 
     // ------------------------------------------------- 2. the happy path
@@ -141,7 +141,7 @@ public class RetrievalHarnessTests
             ["model"] = "gpt-4o-mini",
             ["messages"] = new JsonArray(
                 new JsonObject { ["role"] = "user", ["content"] = "q" }),
-            ["trustgate_metadata"] = new JsonObject
+            ["shashu_metadata"] = new JsonObject
             {
                 ["rag_context"] = new JsonObject
                 {

@@ -80,8 +80,8 @@ public class SessionOriginTests
         using var client = BuildClient(sent, sessionId: "constructed");
 
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "flow"),
-            ("x-trustgate-session-id", "captured"))))
+            ("x-shashu-trace-id", "flow"),
+            ("x-shashu-session-id", "captured"))))
         {
             await Call(client);
         }
@@ -96,8 +96,8 @@ public class SessionOriginTests
         using var client = BuildClient(sent, sessionId: "constructed");
 
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "flow"),
-            ("x-trustgate-session-id", "captured"))))
+            ("x-shashu-trace-id", "flow"),
+            ("x-shashu-session-id", "captured"))))
         {
             await client.Chat.Completions.CreateAsync(
                 new ChatCompletionRequest
@@ -115,7 +115,7 @@ public class SessionOriginTests
     {
         var stub = new StubHandler((req, _) =>
         {
-            sent.Add(req.Headers.TryGetValues("x-trustgate-session-id", out var v)
+            sent.Add(req.Headers.TryGetValues("x-shashu-session-id", out var v)
                 ? v.Single()
                 : null);
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = OkBody() });

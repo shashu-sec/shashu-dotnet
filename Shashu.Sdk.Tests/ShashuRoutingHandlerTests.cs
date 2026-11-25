@@ -184,7 +184,7 @@ public class ShashuRoutingHandlerTests
     [Fact]
     public void Shashu_facade_throws_when_api_key_missing()
     {
-        Environment.SetEnvironmentVariable("TRUSTGATE_API_KEY", null);
+        Environment.SetEnvironmentVariable("SHASHU_API_KEY", null);
         Environment.SetEnvironmentVariable("SHASHU_API_KEY", null);
         Assert.Throws<ShashuConfigException>(() => GatewayRouting.AsHttpHandler());
     }
@@ -192,7 +192,7 @@ public class ShashuRoutingHandlerTests
     [Fact]
     public async Task Shashu_facade_picks_up_env_var_api_key()
     {
-        Environment.SetEnvironmentVariable("TRUSTGATE_API_KEY", "sk-trustgate-env-key");
+        Environment.SetEnvironmentVariable("SHASHU_API_KEY", "sk-trustgate-env-key");
         try
         {
             var captured = new CapturingInnerHandler();
@@ -208,7 +208,7 @@ public class ShashuRoutingHandlerTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("TRUSTGATE_API_KEY", null);
+            Environment.SetEnvironmentVariable("SHASHU_API_KEY", null);
         }
     }
 }

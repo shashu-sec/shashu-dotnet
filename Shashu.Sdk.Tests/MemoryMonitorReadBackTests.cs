@@ -20,12 +20,12 @@ public class MemoryMonitorReadBackTests
     private static Dictionary<string, string> Headers() => new()
     {
         ["x-request-id"] = "3e34807577adb89d281f10ad7c73c0d5",
-        ["x-trustgate-decision"] = "not_checked",
-        ["x-trustgate-inspection"] = "input=checked;output=skipped;reason=output_scan_disabled;dlp=skipped;"
+        ["x-shashu-decision"] = "not_checked",
+        ["x-shashu-inspection"] = "input=checked;output=skipped;reason=output_scan_disabled;dlp=skipped;"
             + "forensic=skipped;memory=checked;output_scan=skipped;regex=skipped",
         ["x-should-retry"] = "false",
-        ["x-trustgate-code"] = "inspector_timeout",
-        ["x-trustgate-memory"] = "writes=1;blocked=0;recalls=0;flagged=0",
+        ["x-shashu-code"] = "inspector_timeout",
+        ["x-shashu-memory"] = "writes=1;blocked=0;recalls=0;flagged=0",
     };
 
     [Fact]

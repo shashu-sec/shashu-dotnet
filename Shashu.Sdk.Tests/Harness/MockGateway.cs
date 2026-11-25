@@ -92,19 +92,19 @@ internal sealed record RecordedRequest(
         Body.Length == 0 ? null : JsonNode.Parse(Body) as JsonObject;
 
     /// <summary>
-    /// The <c>trustgate_metadata.rag_context</c> block, or null if the request
+    /// The <c>shashu_metadata.rag_context</c> block, or null if the request
     /// carried none. The negative case asserts on this being null.
     /// </summary>
     internal JsonObject? RagContext =>
-        Json?["trustgate_metadata"] is JsonObject metadata
+        Json?["shashu_metadata"] is JsonObject metadata
             ? metadata["rag_context"] as JsonObject
             : null;
 
     internal JsonObject? MemoryContext =>
-        Json?["trustgate_metadata"] is JsonObject metadata
+        Json?["shashu_metadata"] is JsonObject metadata
             ? metadata["memory_context"] as JsonObject
             : null;
 
-    /// <summary>Whether the request carried a <c>trustgate_metadata</c> key at all.</summary>
-    internal bool HasShashuMetadata => Json?["trustgate_metadata"] is not null;
+    /// <summary>Whether the request carried a <c>shashu_metadata</c> key at all.</summary>
+    internal bool HasShashuMetadata => Json?["shashu_metadata"] is not null;
 }

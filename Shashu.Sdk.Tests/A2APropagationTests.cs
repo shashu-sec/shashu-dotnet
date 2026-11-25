@@ -32,8 +32,8 @@ public class A2APropagationTests
     public void Capture_populates_store_including_inbound_caller()
     {
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "flow-1"), ("x-trustgate-session-id", "sess-1"),
-            ("x-trustgate-hop-depth", "2"), ("x-trustgate-caller-agent-id", "agent-A"))))
+            ("x-shashu-trace-id", "flow-1"), ("x-shashu-session-id", "sess-1"),
+            ("x-shashu-hop-depth", "2"), ("x-shashu-caller-agent-id", "agent-A"))))
         {
             Assert.True(Tracer.IsA2aHop);
             Assert.Equal("flow-1", Tracer.TraceId);
@@ -50,7 +50,7 @@ public class A2APropagationTests
     {
         using (Tracer.Incoming(H()))
         {
-            Assert.False(Tracer.CaptureIncoming(H(("x-trustgate-session-id", "s"))));
+            Assert.False(Tracer.CaptureIncoming(H(("x-shashu-session-id", "s"))));
             Assert.False(Tracer.CaptureIncoming(H()));
             Assert.False(Tracer.IsA2aHop);
         }
@@ -60,8 +60,8 @@ public class A2APropagationTests
     public void Capture_is_case_insensitive()
     {
         using (Tracer.Incoming(H(
-            ("X-Trustgate-Trace-Id", "T1"), ("X-Trustgate-Session-Id", "S1"),
-            ("X-Trustgate-Caller-Agent-Id", "A1"))))
+            ("X-Shashu-Trace-Id", "T1"), ("X-Shashu-Session-Id", "S1"),
+            ("X-Shashu-Caller-Agent-Id", "A1"))))
         {
             Assert.Equal("T1", Tracer.TraceId);
             Assert.Equal("S1", Tracer.SessionId);
@@ -73,8 +73,8 @@ public class A2APropagationTests
     public void Capture_accepts_HttpHeaders()
     {
         using var req = new HttpRequestMessage(HttpMethod.Get, "https://x.invalid/");
-        req.Headers.TryAddWithoutValidation("x-trustgate-trace-id", "T2");
-        req.Headers.TryAddWithoutValidation("x-trustgate-hop-depth", "5");
+        req.Headers.TryAddWithoutValidation("x-shashu-trace-id", "T2");
+        req.Headers.TryAddWithoutValidation("x-shashu-hop-depth", "5");
         using (Tracer.Incoming(req.Headers))
         {
             Assert.Equal("T2", Tracer.TraceId);
@@ -85,7 +85,7 @@ public class A2APropagationTests
     [Fact]
     public void No_hop_header_defaults_outbound_to_one()
     {
-        using (Tracer.Incoming(H(("x-trustgate-trace-id", "f"))))
+        using (Tracer.Incoming(H(("x-shashu-trace-id", "f"))))
         {
             Assert.Equal(0, Tracer.InboundHopDepth);
             Assert.Equal(1, Tracer.OutboundHopDepth);
@@ -95,7 +95,7 @@ public class A2APropagationTests
     [Fact]
     public void No_caller_leaves_inbound_caller_null()
     {
-        using (Tracer.Incoming(H(("x-trustgate-trace-id", "f"), ("x-trustgate-hop-depth", "1"))))
+        using (Tracer.Incoming(H(("x-shashu-trace-id", "f"), ("x-shashu-hop-depth", "1"))))
         {
             Assert.Null(Tracer.InboundCallerAgentId);
         }
@@ -108,13 +108,13 @@ public class A2APropagationTests
     public void Gateway_propagates_captured_trace_with_session_and_hop()
     {
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "flow-xyz"), ("x-trustgate-session-id", "sess-1"),
-            ("x-trustgate-hop-depth", "2"), ("x-trustgate-caller-agent-id", "agent-A"))))
+            ("x-shashu-trace-id", "flow-xyz"), ("x-shashu-session-id", "sess-1"),
+            ("x-shashu-hop-depth", "2"), ("x-shashu-caller-agent-id", "agent-A"))))
         {
             var h = WorkflowContext.Build();
-            Assert.Equal("flow-xyz", h["x-trustgate-trace-id"]); // propagated, not a fresh GUID
-            Assert.Equal("sess-1", h["x-trustgate-session-id"]);
-            Assert.Equal("3", h["x-trustgate-hop-depth"]); // inbound 2 + 1
+            Assert.Equal("flow-xyz", h["x-shashu-trace-id"]); // propagated, not a fresh GUID
+            Assert.Equal("sess-1", h["x-shashu-session-id"]);
+            Assert.Equal("3", h["x-shashu-hop-depth"]); // inbound 2 + 1
         }
     }
 
@@ -122,10 +122,10 @@ public class A2APropagationTests
     public void Gateway_forwards_inbound_caller_not_self()
     {
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "F"), ("x-trustgate-caller-agent-id", "agent-A"),
-            ("x-trustgate-hop-depth", "1"))))
+            ("x-shashu-trace-id", "F"), ("x-shashu-caller-agent-id", "agent-A"),
+            ("x-shashu-hop-depth", "1"))))
         {
-            Assert.Equal("agent-A", WorkflowContext.Build()["x-trustgate-caller-agent-id"]);
+            Assert.Equal("agent-A", WorkflowContext.Build()["x-shashu-caller-agent-id"]);
         }
     }
 
@@ -135,33 +135,33 @@ public class A2APropagationTests
         using (Tracer.Incoming(H())) // explicit origin scope
         {
             var h = WorkflowContext.Build();
-            Assert.False(h.ContainsKey("x-trustgate-session-id"));
-            Assert.False(h.ContainsKey("x-trustgate-caller-agent-id"));
-            Assert.False(h.ContainsKey("x-trustgate-hop-depth"));
+            Assert.False(h.ContainsKey("x-shashu-session-id"));
+            Assert.False(h.ContainsKey("x-shashu-caller-agent-id"));
+            Assert.False(h.ContainsKey("x-shashu-hop-depth"));
         }
     }
 
     [Fact]
     public void Caller_omitted_when_no_inbound_caller()
     {
-        using (Tracer.Incoming(H(("x-trustgate-trace-id", "f"), ("x-trustgate-hop-depth", "1"))))
+        using (Tracer.Incoming(H(("x-shashu-trace-id", "f"), ("x-shashu-hop-depth", "1"))))
         {
             var h = WorkflowContext.Build();
-            Assert.Equal("f", h["x-trustgate-trace-id"]);
-            Assert.Equal("2", h["x-trustgate-hop-depth"]);
-            Assert.False(h.ContainsKey("x-trustgate-caller-agent-id"));
+            Assert.Equal("f", h["x-shashu-trace-id"]);
+            Assert.Equal("2", h["x-shashu-hop-depth"]);
+            Assert.False(h.ContainsKey("x-shashu-caller-agent-id"));
         }
     }
 
     [Fact]
     public void Session_omitted_when_not_propagated()
     {
-        using (Tracer.Incoming(H(("x-trustgate-trace-id", "f"), ("x-trustgate-caller-agent-id", "A"))))
+        using (Tracer.Incoming(H(("x-shashu-trace-id", "f"), ("x-shashu-caller-agent-id", "A"))))
         {
             var h = WorkflowContext.Build();
-            Assert.False(h.ContainsKey("x-trustgate-session-id"));
-            Assert.Equal("A", h["x-trustgate-caller-agent-id"]); // forwarded invoker
-            Assert.Equal("1", h["x-trustgate-hop-depth"]);
+            Assert.False(h.ContainsKey("x-shashu-session-id"));
+            Assert.Equal("A", h["x-shashu-caller-agent-id"]); // forwarded invoker
+            Assert.Equal("1", h["x-shashu-hop-depth"]);
         }
     }
 
@@ -169,16 +169,16 @@ public class A2APropagationTests
     public void Span_inside_capture_inherits_trace_and_forwards_lineage()
     {
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "FLOW"), ("x-trustgate-session-id", "S"),
-            ("x-trustgate-hop-depth", "1"), ("x-trustgate-caller-agent-id", "A"))))
+            ("x-shashu-trace-id", "FLOW"), ("x-shashu-session-id", "S"),
+            ("x-shashu-hop-depth", "1"), ("x-shashu-caller-agent-id", "A"))))
         using (Tracer.Span("work"))
         {
             var h = WorkflowContext.Build();
-            Assert.Equal("FLOW", h["x-trustgate-trace-id"]); // span inherits captured trace
-            Assert.True(h.ContainsKey("x-trustgate-span-id"));
-            Assert.Equal("S", h["x-trustgate-session-id"]);
-            Assert.Equal("A", h["x-trustgate-caller-agent-id"]); // forwarded invoker, not self
-            Assert.Equal("2", h["x-trustgate-hop-depth"]);
+            Assert.Equal("FLOW", h["x-shashu-trace-id"]); // span inherits captured trace
+            Assert.True(h.ContainsKey("x-shashu-span-id"));
+            Assert.Equal("S", h["x-shashu-session-id"]);
+            Assert.Equal("A", h["x-shashu-caller-agent-id"]); // forwarded invoker, not self
+            Assert.Equal("2", h["x-shashu-hop-depth"]);
         }
     }
 
@@ -191,10 +191,10 @@ public class A2APropagationTests
         using (Tracer.Incoming(H())) // clean origin: OutboundHopDepth = 1, no session
         {
             var h = WorkflowContext.BuildInvocationHeaders("agent-A");
-            Assert.Equal("agent-A", h["x-trustgate-caller-agent-id"]);
-            Assert.True(h.ContainsKey("x-trustgate-trace-id"));
-            Assert.Equal("1", h["x-trustgate-hop-depth"]);
-            Assert.False(h.ContainsKey("x-trustgate-session-id"));
+            Assert.Equal("agent-A", h["x-shashu-caller-agent-id"]);
+            Assert.True(h.ContainsKey("x-shashu-trace-id"));
+            Assert.Equal("1", h["x-shashu-hop-depth"]);
+            Assert.False(h.ContainsKey("x-shashu-session-id"));
         }
     }
 
@@ -202,14 +202,14 @@ public class A2APropagationTests
     public void Invocation_midflow_propagates_served_flow()
     {
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "F"), ("x-trustgate-session-id", "S"),
-            ("x-trustgate-hop-depth", "1"), ("x-trustgate-caller-agent-id", "agent-A"))))
+            ("x-shashu-trace-id", "F"), ("x-shashu-session-id", "S"),
+            ("x-shashu-hop-depth", "1"), ("x-shashu-caller-agent-id", "agent-A"))))
         {
             var h = WorkflowContext.BuildInvocationHeaders("agent-B");
-            Assert.Equal("F", h["x-trustgate-trace-id"]);                 // served flow propagated
-            Assert.Equal("agent-B", h["x-trustgate-caller-agent-id"]);    // B stamps ITSELF as invoker of C
-            Assert.Equal("S", h["x-trustgate-session-id"]);
-            Assert.Equal("2", h["x-trustgate-hop-depth"]);
+            Assert.Equal("F", h["x-shashu-trace-id"]);                 // served flow propagated
+            Assert.Equal("agent-B", h["x-shashu-caller-agent-id"]);    // B stamps ITSELF as invoker of C
+            Assert.Equal("S", h["x-shashu-session-id"]);
+            Assert.Equal("2", h["x-shashu-hop-depth"]);
         }
     }
 
@@ -217,10 +217,10 @@ public class A2APropagationTests
     public void Invocation_honors_explicit_overrides()
     {
         var h = WorkflowContext.BuildInvocationHeaders("me", traceId: "T", sessionId: "S", hopDepth: 5);
-        Assert.Equal("T", h["x-trustgate-trace-id"]);
-        Assert.Equal("me", h["x-trustgate-caller-agent-id"]);
-        Assert.Equal("5", h["x-trustgate-hop-depth"]);
-        Assert.Equal("S", h["x-trustgate-session-id"]);
+        Assert.Equal("T", h["x-shashu-trace-id"]);
+        Assert.Equal("me", h["x-shashu-caller-agent-id"]);
+        Assert.Equal("5", h["x-shashu-hop-depth"]);
+        Assert.Equal("S", h["x-shashu-session-id"]);
     }
 
     [Fact]
@@ -236,26 +236,26 @@ public class A2APropagationTests
         {
             // A (origin) invokes B: A stamps caller = A.
             var aToB = WorkflowContext.BuildInvocationHeaders("agent-A", traceId: "FLOW");
-            Assert.Equal("agent-A", aToB["x-trustgate-caller-agent-id"]);
+            Assert.Equal("agent-A", aToB["x-shashu-caller-agent-id"]);
 
             // B serves A's call: B's gateway call FORWARDS caller = A (the A→B edge).
             using (Tracer.Incoming(aToB))
             {
                 var bGw = WorkflowContext.Build();
-                Assert.Equal("FLOW", bGw["x-trustgate-trace-id"]);
-                Assert.Equal("agent-A", bGw["x-trustgate-caller-agent-id"]);
-                Assert.Equal("2", bGw["x-trustgate-hop-depth"]); // inbound 1 + 1
+                Assert.Equal("FLOW", bGw["x-shashu-trace-id"]);
+                Assert.Equal("agent-A", bGw["x-shashu-caller-agent-id"]);
+                Assert.Equal("2", bGw["x-shashu-hop-depth"]); // inbound 1 + 1
 
                 // B invokes C: B stamps ITSELF; C will then forward B (the B→C edge).
                 var bToC = WorkflowContext.BuildInvocationHeaders("agent-B");
-                Assert.Equal("agent-B", bToC["x-trustgate-caller-agent-id"]);
-                Assert.Equal("FLOW", bToC["x-trustgate-trace-id"]); // same flow
+                Assert.Equal("agent-B", bToC["x-shashu-caller-agent-id"]);
+                Assert.Equal("FLOW", bToC["x-shashu-trace-id"]); // same flow
 
                 using (Tracer.Incoming(bToC))
                 {
                     var cGw = WorkflowContext.Build();
-                    Assert.Equal("agent-B", cGw["x-trustgate-caller-agent-id"]); // C forwards B
-                    Assert.Equal("3", cGw["x-trustgate-hop-depth"]);
+                    Assert.Equal("agent-B", cGw["x-shashu-caller-agent-id"]); // C forwards B
+                    Assert.Equal("3", cGw["x-shashu-hop-depth"]);
                 }
             }
         }
@@ -268,11 +268,11 @@ public class A2APropagationTests
     public void Incoming_scopes_and_restores()
     {
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "T"), ("x-trustgate-session-id", "S"),
-            ("x-trustgate-caller-agent-id", "A"))))
+            ("x-shashu-trace-id", "T"), ("x-shashu-session-id", "S"),
+            ("x-shashu-caller-agent-id", "A"))))
         {
             Assert.True(Tracer.IsA2aHop);
-            Assert.Equal("T", WorkflowContext.Build()["x-trustgate-trace-id"]);
+            Assert.Equal("T", WorkflowContext.Build()["x-shashu-trace-id"]);
         }
         Assert.False(Tracer.IsA2aHop); // restored → origin, no lineage leakage
     }
@@ -285,12 +285,12 @@ public class A2APropagationTests
     {
         using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", AgentId = "seed-self" });
         Assert.Equal("seed-self", client.AgentId);
-        using (Tracer.Incoming(H(("x-trustgate-trace-id", "F"), ("x-trustgate-hop-depth", "1"))))
+        using (Tracer.Incoming(H(("x-shashu-trace-id", "F"), ("x-shashu-hop-depth", "1"))))
         {
             var h = client.BuildInvocationHeaders();
-            Assert.Equal("seed-self", h["x-trustgate-caller-agent-id"]); // caller = self (invoking side)
-            Assert.Equal("F", h["x-trustgate-trace-id"]);
-            Assert.Equal("2", h["x-trustgate-hop-depth"]);
+            Assert.Equal("seed-self", h["x-shashu-caller-agent-id"]); // caller = self (invoking side)
+            Assert.Equal("F", h["x-shashu-trace-id"]);
+            Assert.Equal("2", h["x-shashu-hop-depth"]);
         }
     }
 
@@ -309,7 +309,7 @@ public class A2APropagationTests
         {
             foreach (var hh in req.Headers) sent[hh.Key.ToLowerInvariant()] = string.Join(",", hh.Value);
             var resp = new HttpResponseMessage(HttpStatusCode.OK) { Content = OkBody() };
-            resp.Headers.TryAddWithoutValidation("x-trustgate-agent-id", "gw-reported");
+            resp.Headers.TryAddWithoutValidation("x-shashu-agent-id", "gw-reported");
             return Task.FromResult(resp);
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
@@ -317,8 +317,8 @@ public class A2APropagationTests
             new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", AgentId = "explicit-seed" }, http);
 
         using (Tracer.Incoming(H(
-            ("x-trustgate-trace-id", "flow-A"), ("x-trustgate-hop-depth", "1"),
-            ("x-trustgate-caller-agent-id", "upstream-A"))))
+            ("x-shashu-trace-id", "flow-A"), ("x-shashu-hop-depth", "1"),
+            ("x-shashu-caller-agent-id", "upstream-A"))))
         {
             await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
             {
@@ -327,8 +327,8 @@ public class A2APropagationTests
             });
         }
 
-        Assert.Equal("flow-A", sent["x-trustgate-trace-id"]);              // propagated
-        Assert.Equal("upstream-A", sent["x-trustgate-caller-agent-id"]);   // FORWARDED, not self
+        Assert.Equal("flow-A", sent["x-shashu-trace-id"]);              // propagated
+        Assert.Equal("upstream-A", sent["x-shashu-caller-agent-id"]);   // FORWARDED, not self
         Assert.Equal("gw-reported", client.AgentId);                       // response refreshed self-id
     }
 
@@ -341,7 +341,7 @@ public class A2APropagationTests
             {
                 Content = new StringContent("{\"error\":{\"message\":\"blocked\",\"type\":\"invalid_request_error\"}}"),
             };
-            resp.Headers.TryAddWithoutValidation("x-trustgate-agent-id", "gw-reported");
+            resp.Headers.TryAddWithoutValidation("x-shashu-agent-id", "gw-reported");
             return Task.FromResult(resp);
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
@@ -378,10 +378,10 @@ public class A2APropagationTests
             });
         }
 
-        Assert.False(sent.ContainsKey("x-trustgate-caller-agent-id")); // origin: no caller even when seeded
-        Assert.True(sent.ContainsKey("x-trustgate-session-id")); // origin still sends a session
-        Assert.False(string.IsNullOrWhiteSpace(sent["x-trustgate-session-id"]));
-        Assert.False(sent.ContainsKey("x-trustgate-hop-depth"));
+        Assert.False(sent.ContainsKey("x-shashu-caller-agent-id")); // origin: no caller even when seeded
+        Assert.True(sent.ContainsKey("x-shashu-session-id")); // origin still sends a session
+        Assert.False(string.IsNullOrWhiteSpace(sent["x-shashu-session-id"]));
+        Assert.False(sent.ContainsKey("x-shashu-hop-depth"));
     }
 
     private static HttpContent OkBody() =>

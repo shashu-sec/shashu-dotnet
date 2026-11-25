@@ -132,9 +132,9 @@ public class TracerTests
             // The restored root span drives header emission for the rest of
             // the flow — it must never claim itself as its own parent.
             var headers = WorkflowContext.Build();
-            Assert.Equal(Tracer.CurrentSpanId, headers["x-trustgate-span-id"]);
-            Assert.NotEqual(headers["x-trustgate-span-id"], headers["x-trustgate-parent-id"]);
-            Assert.Equal(string.Empty, headers["x-trustgate-parent-id"]);
+            Assert.Equal(Tracer.CurrentSpanId, headers["x-shashu-span-id"]);
+            Assert.NotEqual(headers["x-shashu-span-id"], headers["x-shashu-parent-id"]);
+            Assert.Equal(string.Empty, headers["x-shashu-parent-id"]);
         }
     }
 

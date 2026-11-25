@@ -18,7 +18,7 @@ public class ShashuClientTests
     [Fact]
     public void Ctor_WithoutApiKey_Throws()
     {
-        Environment.SetEnvironmentVariable("TRUSTGATE_API_KEY", null);
+        Environment.SetEnvironmentVariable("SHASHU_API_KEY", null);
         Environment.SetEnvironmentVariable("SHASHU_API_KEY", null);
         var ex = Assert.Throws<ShashuConfigException>(() =>
             new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = null }));
@@ -28,7 +28,7 @@ public class ShashuClientTests
     [Fact]
     public void Ctor_PicksUpEnvVarApiKey()
     {
-        Environment.SetEnvironmentVariable("TRUSTGATE_API_KEY", "sk-trustgate-from-env");
+        Environment.SetEnvironmentVariable("SHASHU_API_KEY", "sk-trustgate-from-env");
         try
         {
             using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri });
@@ -39,7 +39,7 @@ public class ShashuClientTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("TRUSTGATE_API_KEY", null);
+            Environment.SetEnvironmentVariable("SHASHU_API_KEY", null);
         }
     }
 

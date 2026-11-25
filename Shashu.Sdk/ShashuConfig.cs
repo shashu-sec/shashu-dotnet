@@ -9,7 +9,7 @@ public sealed class ShashuConfig
 {
     /// <summary>
     /// API key for the agent (<c>tg_sk_...</c>). If unset when constructing a
-    /// client, <c>SHASHU_API_KEY</c> is read, then <c>TRUSTGATE_API_KEY</c>
+    /// client, <c>SHASHU_API_KEY</c> is read, then <c>SHASHU_API_KEY</c>
     /// (warns once). Give either this or <see cref="TokenProvider"/>, not both.
     /// </summary>
     public string? ApiKey { get; set; }
@@ -22,7 +22,7 @@ public sealed class ShashuConfig
 
     /// <summary>
     /// Base URL of your gateway. Falls back to <c>SHASHU_BASE_URL</c>, then
-    /// <c>TRUSTGATE_BASE_URL</c> (warns once).
+    /// <c>SHASHU_BASE_URL</c> (warns once).
     /// </summary>
     /// <remarks>
     /// There is no default and the SDK will not guess one — Shashu is
@@ -72,7 +72,7 @@ public sealed class ShashuConfig
     /// captured inbound caller); used by <see cref="ShashuClient.BuildInvocationHeaders"/>
     /// to stamp <c>caller = self</c> when THIS agent invokes a downstream agent. Seeds the
     /// self-id cache, which is then refreshed from each gateway response's
-    /// <c>x-trustgate-agent-id</c> header. Advisory lineage only — NEVER an auth credential.
+    /// <c>x-shashu-agent-id</c> header. Advisory lineage only — NEVER an auth credential.
     /// </summary>
     public string? AgentId { get; set; }
 
@@ -92,7 +92,7 @@ public sealed class ShashuConfig
     public const string DefaultContractVersion = "2026-09-01";
 
     /// <summary>
-    /// Sent as the <c>trustgate-version</c> request header. Defaults to
+    /// Sent as the <c>shashu-version</c> request header. Defaults to
     /// <see cref="DefaultContractVersion"/>. Set another date to pin it, or
     /// <c>null</c> to send no such header and take whatever the gateway's
     /// account default is (on a stock gateway that is the legacy contract:
@@ -101,10 +101,10 @@ public sealed class ShashuConfig
     /// <remarks>
     /// Without this header the gateway serves its legacy contract, where a
     /// refusal is an HTTP 200 and memory and inspection details reach only the
-    /// <c>x-trustgate-*</c> count headers. With it, a refusal is an error
+    /// <c>x-shashu-*</c> count headers. With it, a refusal is an error
     /// (400 for a content block, 403 for a policy refusal) and the reply body
     /// carries the full decision, which <see cref="Shashu.DecisionOf"/> reads.
-    /// A <c>trustgate-version</c> already on a caller-supplied
+    /// A <c>shashu-version</c> already on a caller-supplied
     /// <see cref="HttpClient"/>'s <c>DefaultRequestHeaders</c> is left alone.
     /// </remarks>
     public string? ContractVersion { get; set; } = DefaultContractVersion;
@@ -113,5 +113,5 @@ public sealed class ShashuConfig
     /// Default user-agent. Override only for testing or for proxy/CDN
     /// debugging. The default identifies the SDK + version for telemetry.
     /// </summary>
-    public string UserAgent { get; set; } = "shashu-dotnet/1.0.0";
+    public string UserAgent { get; set; } = "shashu-dotnet/1.1.0";
 }

@@ -11,7 +11,7 @@ namespace Shashu.Chat;
 /// The optional tool fields (<see cref="ToolCalls"/>, <see cref="ToolCallId"/>,
 /// <see cref="Name"/>) serialise at the message level — they are part of the
 /// OpenAI message payload that IS forwarded to the LLM provider (the model
-/// needs its own prior tool calls), unlike <c>trustgate_metadata</c> which the
+/// needs its own prior tool calls), unlike <c>shashu_metadata</c> which the
 /// gateway strips. Emitting them structurally lets the gateway's
 /// <c>ingress-tool</c> Shashu scanner read each tool call's function name +
 /// arguments directly instead of relying on best-effort de-flattening.
@@ -131,14 +131,14 @@ public sealed record ChatCompletionRequest
 
     /// <summary>
     /// Optional RAG context. When set, the SDK emits it under
-    /// <c>trustgate_metadata.rag_context</c> in the request body so the
+    /// <c>shashu_metadata.rag_context</c> in the request body so the
     /// gateway routes the retrieved documents through the dedicated
     /// <c>ingress-rag</c> Shashu scanner (which has access to the
     /// corpus + per-doc scores + previews — materially better than
     /// scanning concatenated text on the generic ingress-text surface).
     /// </summary>
     /// <remarks>
-    /// The gateway pops <c>trustgate_metadata</c> from the body before
+    /// The gateway pops <c>shashu_metadata</c> from the body before
     /// forwarding to the LLM provider, so the upstream model never sees
     /// the control-plane metadata.
     /// </remarks>
@@ -146,17 +146,17 @@ public sealed record ChatCompletionRequest
     public RagContext? RagContext { get; init; }
 
     /// <summary>
-    /// Free-form metadata sent under <c>trustgate_metadata</c> in the
+    /// Free-form metadata sent under <c>shashu_metadata</c> in the
     /// request body. Use for any control-plane fields the gateway adds
     /// after this SDK release without us having to ship typed properties
     /// for them. Mutually composable with <see cref="RagContext"/> — both
-    /// land under <c>trustgate_metadata</c>.
+    /// land under <c>shashu_metadata</c>.
     /// </summary>
     [JsonIgnore]
     public IDictionary<string, object?>? ShashuMetadata { get; init; }
 
     /// <summary>
-    /// Computed property that emits the merged <c>trustgate_metadata</c>
+    /// Computed property that emits the merged <c>shashu_metadata</c>
     /// blob at serialisation time. Combines <see cref="ShashuMetadata"/>
     /// (free-form) with <see cref="RagContext"/> (typed), preferring an
     /// explicit <c>rag_context</c> entry in <see cref="ShashuMetadata"/>
@@ -167,7 +167,7 @@ public sealed record ChatCompletionRequest
     /// the JSON serialiser invokes it. Returns null when there's nothing
     /// to emit, so the field is omitted from the body.
     /// </remarks>
-    [JsonPropertyName("trustgate_metadata")]
+    [JsonPropertyName("shashu_metadata")]
     public IDictionary<string, object?>? ShashuMetadataPayload
     {
         get
@@ -201,7 +201,7 @@ public sealed record ChatCompletionRequest
 /// </summary>
 /// <remarks>
 /// Set <see cref="ChatCompletionRequest.RagContext"/> to attach. The SDK
-/// serialises this under <c>trustgate_metadata.rag_context</c>; the
+/// serialises this under <c>shashu_metadata.rag_context</c>; the
 /// gateway strips that key before forwarding to the LLM provider.
 /// </remarks>
 public sealed record RagContext
@@ -247,7 +247,7 @@ public sealed record ChatCompletionUsage(
 
 /// <summary>
 /// OpenAI-compatible chat-completions response. The Shashu-specific
-/// security verdict / audit metadata is attached as <c>x-trustgate-*</c>
+/// security verdict / audit metadata is attached as <c>x-shashu-*</c>
 /// headers on the response, not in the JSON body — same as the Python /
 /// Node SDKs.
 /// </summary>
@@ -292,7 +292,7 @@ public sealed class ChatCompletionResponse
     public Dictionary<string, JsonElement>? ExtraFields { get; set; }
 
     /// <summary>
-    /// <c>x-trustgate-*</c> (and sibling) response headers captured from
+    /// <c>x-shashu-*</c> (and sibling) response headers captured from
     /// the HTTP response. Empty when the object was not built by this SDK.
     /// </summary>
     [JsonIgnore]

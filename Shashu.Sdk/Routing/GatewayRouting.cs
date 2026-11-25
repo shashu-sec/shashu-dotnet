@@ -26,7 +26,7 @@ namespace Shashu.Routing;
 /// </code>
 ///
 /// <para>API keys can be passed explicitly or read from the
-/// <c>TRUSTGATE_API_KEY</c> environment variable.</para>
+/// <c>SHASHU_API_KEY</c> environment variable.</para>
 ///
 /// <para>Note: this class lives in the <c>Shashu.Routing</c> namespace
 /// (not the root <c>Shashu</c>) to avoid a name collision with the
@@ -40,7 +40,7 @@ public static class GatewayRouting
     /// through the Shashu gateway. Pass to any vendor SDK that accepts a
     /// custom <c>HttpClient</c>.
     /// </summary>
-    /// <param name="apiKey">Shashu API key (sk-trustgate-...). Falls back to <c>TRUSTGATE_API_KEY</c> env var.</param>
+    /// <param name="apiKey">Shashu API key (sk-trustgate-...). Falls back to <c>SHASHU_API_KEY</c> env var.</param>
     /// <param name="options">Optional gateway URL + org-id override.</param>
     /// <param name="innerHandler">Optional inner HTTP handler. Defaults to <c>HttpClientHandler</c>.</param>
     public static HttpMessageHandler AsHttpHandler(

@@ -11,14 +11,14 @@ namespace Shashu.Tests;
 
 /// <summary>
 /// Verifies the <c>RagContext</c> + <c>ShashuMetadata</c> fields
-/// serialise correctly under <c>trustgate_metadata.rag_context</c> in
+/// serialise correctly under <c>shashu_metadata.rag_context</c> in
 /// the request body — the contract the gateway's <c>ingress-rag</c>
 /// Shashu scanner reads from.
 /// </summary>
 public class RagContextTests
 {
     [Fact]
-    public async Task RagContext_serialises_under_trustgate_metadata_rag_context()
+    public async Task RagContext_serialises_under_shashu_metadata_rag_context()
     {
         var capture = new JsonBodyCapturingHandler();
         using var http = new HttpClient(capture) { BaseAddress = new Uri("https://test.invalid/") };
@@ -43,7 +43,7 @@ public class RagContextTests
 
         Assert.NotNull(capture.LastRequestBody);
         using var doc = JsonDocument.Parse(capture.LastRequestBody!);
-        var meta = doc.RootElement.GetProperty("trustgate_metadata");
+        var meta = doc.RootElement.GetProperty("shashu_metadata");
         var rag = meta.GetProperty("rag_context");
         Assert.Equal("policy_docs_v2", rag.GetProperty("corpus").GetString());
         Assert.Equal("refinance", rag.GetProperty("query").GetString());
@@ -74,7 +74,7 @@ public class RagContextTests
         });
 
         using var doc = JsonDocument.Parse(capture.LastRequestBody!);
-        var meta = doc.RootElement.GetProperty("trustgate_metadata");
+        var meta = doc.RootElement.GetProperty("shashu_metadata");
         Assert.Equal("Final_Summary", meta.GetProperty("workflow_step").GetString());
         Assert.Equal("value", meta.GetProperty("custom_field").GetString());
         Assert.Equal("c", meta.GetProperty("rag_context").GetProperty("corpus").GetString());
@@ -95,8 +95,8 @@ public class RagContextTests
         });
 
         using var doc = JsonDocument.Parse(capture.LastRequestBody!);
-        // Vital: when nothing is set, the field must be omitted, not emitted as `"trustgate_metadata":null`.
-        Assert.False(doc.RootElement.TryGetProperty("trustgate_metadata", out _));
+        // Vital: when nothing is set, the field must be omitted, not emitted as `"shashu_metadata":null`.
+        Assert.False(doc.RootElement.TryGetProperty("shashu_metadata", out _));
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class RagContextTests
         });
 
         using var doc = JsonDocument.Parse(capture.LastRequestBody!);
-        var rag = doc.RootElement.GetProperty("trustgate_metadata").GetProperty("rag_context");
+        var rag = doc.RootElement.GetProperty("shashu_metadata").GetProperty("rag_context");
         Assert.Equal("from-caller-explicit", rag.GetProperty("corpus").GetString());
     }
 }

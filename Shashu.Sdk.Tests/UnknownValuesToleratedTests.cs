@@ -30,11 +30,11 @@ public class UnknownValuesToleratedTests
 
     internal static readonly Dictionary<string, string> Headers = new()
     {
-        ["x-trustgate-decision"] = "refuse",
-        ["x-trustgate-code"] = "made_up_code_zz",
-        ["x-trustgate-attachments"] = "total=1;blocked=1;made_up=2",
-        ["x-trustgate-memory"] = "writes=1;made_up=2",
-        ["x-trustgate-made-up-header"] = "zz",
+        ["x-shashu-decision"] = "refuse",
+        ["x-shashu-code"] = "made_up_code_zz",
+        ["x-shashu-attachments"] = "total=1;blocked=1;made_up=2",
+        ["x-shashu-memory"] = "writes=1;made_up=2",
+        ["x-shashu-made-up-header"] = "zz",
     };
 
     private static readonly ChatCompletionRequest Request = new()
@@ -46,7 +46,7 @@ public class UnknownValuesToleratedTests
     [Fact]
     public void DecisionFrom_reads_made_up_values_without_throwing()
     {
-        var d = Shashu.DecisionFrom("{\"error\":{\"message\":\"m\",\"trustgate\":" + Envelope + "}}", Headers);
+        var d = Shashu.DecisionFrom("{\"error\":{\"message\":\"m\",\"shashu\":" + Envelope + "}}", Headers);
         Assert.NotNull(d);
         Assert.Equal("refuse", d!.Decision);
         Assert.Equal("made_up_code_zz", d.Code);
@@ -55,7 +55,7 @@ public class UnknownValuesToleratedTests
     [Fact]
     public void A_made_up_decision_is_still_a_block()
     {
-        var body = "{\"trustgate\":" + Envelope.Replace("\"refuse\"", "\"made_up_decision_zz\"") + "}";
+        var body = "{\"shashu\":" + Envelope.Replace("\"refuse\"", "\"made_up_decision_zz\"") + "}";
         Assert.Equal("made_up_decision_zz", Shashu.DecisionFrom(body, null)!.Decision);
         Assert.True(Shashu.IsBlock(body));
     }
@@ -64,7 +64,7 @@ public class UnknownValuesToleratedTests
     public async Task The_client_throws_the_type_it_always_did()
     {
         using var client = Client(HttpStatusCode.Forbidden,
-            "{\"error\":{\"message\":\"m\",\"type\":\"permission_error\",\"code\":\"made_up_code_zz\",\"trustgate\":"
+            "{\"error\":{\"message\":\"m\",\"type\":\"permission_error\",\"code\":\"made_up_code_zz\",\"shashu\":"
             + Envelope + "}}", Headers);
         var ex = await Assert.ThrowsAnyAsync<ShashuException>(() => client.Chat.Completions.CreateAsync(Request));
         Assert.IsAssignableFrom<ShashuPolicyViolation>(ex);
@@ -77,8 +77,8 @@ public class UnknownValuesToleratedTests
         using var client = Client(HttpStatusCode.OK,
             "{\"id\":\"c1\",\"object\":\"chat.completion\",\"created\":1,\"model\":\"gpt-4o\","
             + "\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"ok\"},\"finish_reason\":\"stop\"}],"
-            + "\"made_up_body_field\":{\"x\":1},\"trustgate\":" + Envelope.Replace("\"refuse\"", "\"allow\"") + "}",
-            new Dictionary<string, string> { ["x-trustgate-decision"] = "allow" });
+            + "\"made_up_body_field\":{\"x\":1},\"shashu\":" + Envelope.Replace("\"refuse\"", "\"allow\"") + "}",
+            new Dictionary<string, string> { ["x-shashu-decision"] = "allow" });
         var resp = await client.Chat.Completions.CreateAsync(Request);
         Assert.Equal("ok", resp.Choices[0].Message.Content);
         Assert.Equal("made_up_code_zz", Shashu.DecisionOf(resp)!.Code);
@@ -94,7 +94,7 @@ public class UnknownValuesToleratedTests
     {
         var sse =
             "data: {\"id\":\"c\",\"object\":\"chat.completion.chunk\",\"created\":null,\"model\":\"gpt-4o\","
-            + "\"trustgate\":" + Envelope.Replace("\"refuse\"", "\"not_checked\"") + ","
+            + "\"shashu\":" + Envelope.Replace("\"refuse\"", "\"not_checked\"") + ","
             + "\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":null}]}\n\n"
             + "data: {\"id\":\"c\",\"object\":\"chat.completion.chunk\",\"created\":null,\"model\":\"gpt-4o\","
             + "\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Paris.\"},\"finish_reason\":\"stop\"}]}\n\n"

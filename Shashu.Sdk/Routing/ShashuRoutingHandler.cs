@@ -231,7 +231,7 @@ public class ShashuRoutingHandler : DelegatingHandler
 public class ShashuRoutingOptions
 {
     /// <summary>
-    /// Your gateway's base URL. Falls back to the <c>TRUSTGATE_BASE_URL</c>
+    /// Your gateway's base URL. Falls back to the <c>SHASHU_BASE_URL</c>
     /// environment variable.
     /// </summary>
     /// <remarks>
@@ -250,7 +250,7 @@ public class ShashuRoutingOptions
     public string? OrganizationId { get; set; }
 
     /// <summary>
-    /// Sent as the <c>trustgate-version</c> header on every request this
+    /// Sent as the <c>shashu-version</c> header on every request this
     /// handler reroutes to the gateway. Defaults to
     /// <see cref="ShashuConfig.DefaultContractVersion"/>, so a refusal
     /// reaches the vendor SDK as its own error (400 or 403) rather than as a 200

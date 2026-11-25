@@ -11,7 +11,7 @@ namespace Shashu.Tests;
 /// <summary>
 /// The SDK declares the contract version it speaks, as the Python SDK does
 /// (<c>trustgate/context.py</c> <c>DEFAULT_CONTRACT_VERSION</c>). The gateway
-/// resolves an ABSENT <c>trustgate-version</c> header to its legacy contract
+/// resolves an ABSENT <c>shashu-version</c> header to its legacy contract
 /// (<c>core/app/contract/version.py</c> <c>resolve_version</c>), where every
 /// refusal is a 200 and the body carries no decision envelope — so memory and
 /// inspection details reached only the header counts.
@@ -25,7 +25,7 @@ namespace Shashu.Tests;
 /// </summary>
 public class ContractVersionDefaultTests
 {
-    private const string Header = "trustgate-version";
+    private const string Header = "shashu-version";
 
     private static readonly ChatCompletionRequest Request = new()
     {
@@ -39,7 +39,7 @@ public class ContractVersionDefaultTests
         + "\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":4,\"completion_tokens\":2,\"total_tokens\":6}";
 
     private static string Delivered(string memory) =>
-        "{" + Chat200 + ",\"trustgate\":{\"decision\":\"allow\",\"retryable\":false,\"id\":\"3e348075\","
+        "{" + Chat200 + ",\"shashu\":{\"decision\":\"allow\",\"retryable\":false,\"id\":\"3e348075\","
         + "\"inspection\":{\"input\":\"checked\",\"output\":\"checked\",\"detectors\":{\"memory\":\"checked\"}},"
         + "\"versions\":{\"contract\":\"2026-09-01\"},\"message\":\"Delivered.\",\"memory\":" + memory + "}}";
 
@@ -55,7 +55,7 @@ public class ContractVersionDefaultTests
 
     private static string Refusal(string type, string code, string message, string decision, string? blocks = null) =>
         "{\"error\":{\"message\":\"" + message + "\",\"type\":\"" + type + "\",\"param\":null,\"code\":\"" + code
-        + "\",\"trustgate\":{\"decision\":\"" + decision + "\",\"retryable\":false,\"id\":\"b510c203\","
+        + "\",\"shashu\":{\"decision\":\"" + decision + "\",\"retryable\":false,\"id\":\"b510c203\","
         + "\"inspection\":{\"input\":\"checked\"},\"versions\":{\"contract\":\"2026-09-01\"},"
         + "\"message\":\"" + message + "\",\"code\":\"" + code + "\"" + (blocks is null ? "" : "," + blocks)
         + "}},\"choices\":[]}";
@@ -180,7 +180,7 @@ public class ContractVersionDefaultTests
         using (client)
             await client.Chat.Completions.CreateAsync(Request);
 
-        Assert.Empty(seen.Values("trustgate-block-encoding"));
+        Assert.Empty(seen.Values("shashu-block-encoding"));
     }
 
     // --- (b) Monitor: a flagged, delivered save ------------------------------

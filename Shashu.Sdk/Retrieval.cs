@@ -10,7 +10,7 @@ namespace Shashu;
 /// <remarks>
 /// <para>There are exactly two members here and there is no third, per
 /// <c>contracts/sdk-surface.v1.md</c>. Both are no-ops when
-/// <c>TRUSTGATE_DISABLE=1</c>.</para>
+/// <c>SHASHU_DISABLE=1</c>.</para>
 ///
 /// <para><b>Calling it.</b> The type is a holder — C# has no free functions,
 /// so the two entry points need one. It is named for what it does rather than
@@ -199,7 +199,7 @@ public static class Retrieval
         }
     }
 
-    /// <summary>What <c>TRUSTGATE_DISABLE=1</c> hands back: a scope that does nothing.</summary>
+    /// <summary>What <c>SHASHU_DISABLE=1</c> hands back: a scope that does nothing.</summary>
     private sealed class InertScope : IDisposable
     {
         internal static readonly InertScope Instance = new();

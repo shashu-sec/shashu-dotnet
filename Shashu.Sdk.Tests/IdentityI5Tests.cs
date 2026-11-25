@@ -25,7 +25,7 @@ public class IdentityI5Tests : IDisposable
     public IdentityI5Tests()
     {
         Environment.SetEnvironmentVariable("SHASHU_API_KEY", null);
-        Environment.SetEnvironmentVariable("TRUSTGATE_API_KEY", null);
+        Environment.SetEnvironmentVariable("SHASHU_API_KEY", null);
         CredentialResolver.UnixNow = static () => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     }
 

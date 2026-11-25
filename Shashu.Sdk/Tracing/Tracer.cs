@@ -14,10 +14,10 @@ namespace Shashu.Tracing;
 /// <remarks>
 /// <para>What gets emitted on the wire:</para>
 /// <list type="bullet">
-///   <item><c>x-trustgate-trace-id</c> — the active span's trace id (or
+///   <item><c>x-shashu-trace-id</c> — the active span's trace id (or
 ///         the workflow-context default when no span is active).</item>
-///   <item><c>x-trustgate-span-id</c> — the active span's span id.</item>
-///   <item><c>x-trustgate-parent-id</c> — the active span's parent
+///   <item><c>x-shashu-span-id</c> — the active span's span id.</item>
+///   <item><c>x-shashu-parent-id</c> — the active span's parent
 ///         span id. Empty for root spans.</item>
 /// </list>
 ///
@@ -104,7 +104,7 @@ public static class Tracer
     /// <summary>The captured inbound session id, or null when none was propagated.</summary>
     public static string? SessionId => string.IsNullOrEmpty(_sessionId.Value) ? null : _sessionId.Value;
 
-    /// <summary>Advisory inbound hop depth captured from x-trustgate-hop-depth (0 if absent).</summary>
+    /// <summary>Advisory inbound hop depth captured from x-shashu-hop-depth (0 if absent).</summary>
     public static int InboundHopDepth => _inboundHopDepth.Value;
 
     /// <summary>
@@ -114,7 +114,7 @@ public static class Tracer
     public static int OutboundHopDepth => _inboundHopDepth.Value + 1;
 
     /// <summary>
-    /// The captured inbound x-trustgate-caller-agent-id — the upstream agent that INVOKED
+    /// The captured inbound x-shashu-caller-agent-id — the upstream agent that INVOKED
     /// this hop. The SDK FORWARDS this on the outbound gateway call so the gateway records
     /// the real (invoker → this agent) edge, NEVER this agent's own id (§4.1). null at
     /// origin / caller-stripped.
@@ -125,9 +125,9 @@ public static class Tracer
     /// <summary>
     /// Capture an inbound flow from the headers of a request this agent is SERVING, so a
     /// downstream call made through the SDK propagates the SAME flow (WP-A2A-4 / ADR-007 §0).
-    /// Reads (case-insensitively) <c>x-trustgate-trace-id</c> (the flow id),
-    /// <c>x-trustgate-session-id</c>, <c>x-trustgate-hop-depth</c>, and
-    /// <c>x-trustgate-caller-agent-id</c> (the upstream INVOKER). The captured trace is
+    /// Reads (case-insensitively) <c>x-shashu-trace-id</c> (the flow id),
+    /// <c>x-shashu-session-id</c>, <c>x-shashu-hop-depth</c>, and
+    /// <c>x-shashu-caller-agent-id</c> (the upstream INVOKER). The captured trace is
     /// PROPAGATED on the next outbound call (never re-minted); the session, inbound hop
     /// depth, and inbound caller ride along — the caller is FORWARDED on the gateway call
     /// (§4.1), never replaced by self.
@@ -174,7 +174,7 @@ public static class Tracer
     /// </summary>
     private static bool ApplyCapture(Dictionary<string, string> h)
     {
-        var trace = h.TryGetValue("x-trustgate-trace-id", out var t) ? t.Trim() : "";
+        var trace = h.TryGetValue("x-shashu-trace-id", out var t) ? t.Trim() : "";
         if (string.IsNullOrEmpty(trace))
         {
             // Origin: clear any ambient capture so non-A2A behavior is unchanged.
@@ -185,9 +185,9 @@ public static class Tracer
             return false;
         }
         _capturedTraceId.Value = trace;
-        _sessionId.Value = h.TryGetValue("x-trustgate-session-id", out var s) && !string.IsNullOrWhiteSpace(s) ? s.Trim() : null;
-        _inboundHopDepth.Value = ParseHopDepth(h.TryGetValue("x-trustgate-hop-depth", out var hd) ? hd : null);
-        _inboundCallerAgentId.Value = h.TryGetValue("x-trustgate-caller-agent-id", out var c) && !string.IsNullOrWhiteSpace(c) ? c.Trim() : null;
+        _sessionId.Value = h.TryGetValue("x-shashu-session-id", out var s) && !string.IsNullOrWhiteSpace(s) ? s.Trim() : null;
+        _inboundHopDepth.Value = ParseHopDepth(h.TryGetValue("x-shashu-hop-depth", out var hd) ? hd : null);
+        _inboundCallerAgentId.Value = h.TryGetValue("x-shashu-caller-agent-id", out var c) && !string.IsNullOrWhiteSpace(c) ? c.Trim() : null;
         return true;
     }
 
@@ -250,7 +250,7 @@ public static class Tracer
     /// <summary>
     /// Configure the tracer's flush target. Call once at app startup —
     /// idempotent if called multiple times. If unset, the tracer reads
-    /// <c>TRUSTGATE_API_KEY</c> + <c>TRUSTGATE_BASE_URL</c> at flush time.
+    /// <c>SHASHU_API_KEY</c> + <c>SHASHU_BASE_URL</c> at flush time.
     /// </summary>
     public static void Configure(
         string? apiKey,
@@ -338,7 +338,7 @@ public static class Tracer
                 Console.Error.WriteLine(
                     "[trustgate.tracer] no gateway address configured, so spans are being "
                     + "discarded. Pass gatewayBaseUrl to Tracer.Configure(), or set one of the "
-                    + "SHASHU_BASE_URL or TRUSTGATE_BASE_URL environment variables. SHASHU is self-hosted: "
+                    + "SHASHU_BASE_URL environment variables. SHASHU is self-hosted: "
                     + "the SDK has no default address and will not guess one.");
             }
             return;

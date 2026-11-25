@@ -21,8 +21,8 @@ public class TracerAddressTests
     public async Task An_unconfigured_flush_discards_spans_without_throwing_or_dialling()
     {
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        using var __l = new EnvVar(ShashuEnv.BaseUrlEnvLegacy, null);
-        using var __ = new EnvVar("TRUSTGATE_API_KEY", "sk-trustgate-test");
+        using var __l = new EnvVar(ShashuEnv.BaseUrlEnv, null);
+        using var __ = new EnvVar("SHASHU_API_KEY", "sk-trustgate-test");
 
         using (Tracer.Span("unconfigured")) { }
 
@@ -54,8 +54,8 @@ public class TracerAddressTests
     public async Task An_unconfigured_flush_warns_once_rather_than_being_silent()
     {
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        using var __l = new EnvVar(ShashuEnv.BaseUrlEnvLegacy, null);
-        using var __ = new EnvVar("TRUSTGATE_API_KEY", "sk-trustgate-test");
+        using var __l = new EnvVar(ShashuEnv.BaseUrlEnv, null);
+        using var __ = new EnvVar("SHASHU_API_KEY", "sk-trustgate-test");
 
         var captured = new StringWriter();
         var previous = Console.Error;
