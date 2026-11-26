@@ -119,7 +119,7 @@ public class StreamingTests
 
         using var http = new HttpClient(bodyCapture) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         await foreach (var _ in client.Chat.Completions.CreateStreamAsync(
             new ChatCompletionRequest
@@ -209,7 +209,7 @@ public class StreamingTests
     {
         var handler = new SseStubHandler(sseBody, status);
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://test.invalid/") };
-        return new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+        return new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
     }
 }
 

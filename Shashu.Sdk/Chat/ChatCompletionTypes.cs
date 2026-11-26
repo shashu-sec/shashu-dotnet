@@ -284,7 +284,7 @@ public sealed class ChatCompletionResponse
     public ChatCompletionUsage? Usage { get; init; }
 
     /// <summary>
-    /// Unknown JSON members, including the top-level <c>trustgate</c>
+    /// Unknown JSON members, including the top-level <c>shashu</c>
     /// decision envelope. Without this slot the envelope is dropped on
     /// parse and <c>DecisionOf</c> cannot read the body carrier.
     /// </summary>

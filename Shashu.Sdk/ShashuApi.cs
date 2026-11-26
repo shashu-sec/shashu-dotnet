@@ -1,10 +1,12 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Shashu.Chat;
 using Shashu.Context;
+using Shashu.Internal;
 using Shashu.Tracing;
 
 namespace Shashu;
@@ -202,7 +204,7 @@ internal sealed class ShashuApi
     /// Apply the per-request workflow-context headers (Shadow AI source,
     /// trace id, runtime metadata, source-tool blob) to a request just
     /// before it goes on the wire. Mirrors the Python SDK's
-    /// <c>build_trustgate_headers()</c> contract.
+    /// <c>build_shashu_headers()</c> contract.
     /// </summary>
     /// <remarks>
     /// Keeps the heavy-lifting in <see cref="WorkflowContext.Build"/> so the
@@ -264,6 +266,16 @@ internal sealed class ShashuApi
         var attempt = 0;
         var passRetried = false;
         var payload = JsonSerializer.SerializeToUtf8Bytes(body, Json);
+        if (RetrievalBus.HasEvents())
+        {
+            using var joinReq = new HttpRequestMessage(HttpMethod.Post, path);
+            var joinContent = new ByteArrayContent(payload);
+            joinContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            joinReq.Content = joinContent;
+            await RetrievalJoiner.JoinAsync(joinReq, cancellationToken).ConfigureAwait(false);
+            if (joinReq.Content is not null)
+                payload = await joinReq.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        }
         var frozenContext = WorkflowContext.Build(sessionId: ResolveSession(sessionId));
         while (true)
         {
@@ -283,10 +295,11 @@ internal sealed class ShashuApi
             {
                 response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
             }
-            catch (HttpRequestException) when (attempt < _options.MaxRetries)
+            catch (HttpRequestException ex) when (attempt < _options.MaxRetries && RequestNeverLeft(ex))
             {
-                // Connection-level failure — the request never got a response, so a
-                // retry can't duplicate a side effect. (Mirrors the Python/Node SDKs.)
+                // Transport failure before any request byte left. A drop after
+                // the request was sent is raised: the gateway may already have
+                // run the call.
                 await Task.Delay(BackoffMs(attempt), cancellationToken).ConfigureAwait(false);
                 attempt++;
                 continue;
@@ -377,6 +390,23 @@ internal sealed class ShashuApi
     {
         if (chunk.Choices.Any(c => c.FinishReason == "content_filter"))
             throw ShashuContentFilterException.FromStreamChunk();
+    }
+
+    internal static bool RequestNeverLeft(HttpRequestException ex)
+    {
+        for (Exception? e = ex; e is not null; e = e.InnerException)
+        {
+            if (e is SocketException se)
+            {
+                return se.SocketErrorCode is SocketError.ConnectionRefused
+                    or SocketError.HostUnreachable
+                    or SocketError.NetworkUnreachable
+                    or SocketError.AddressNotAvailable
+                    or SocketError.TryAgain
+                    or SocketError.HostNotFound;
+            }
+        }
+        return false;
     }
 
     /// <summary>Exponential backoff with jitter: 250ms, 500ms, 1s, capped at 2s.</summary>
@@ -646,9 +676,9 @@ public class ShashuException : Exception
 ///         provider credential is valid but has no access to the target model.
 ///         Nothing about the customer's Shashu policy is wrong. Carries
 ///         <c>error.type</c> = <c>"ProviderPermissionError"</c> and a message
-///         prefixed <c>"Shashu Provider Error: "</c>.</item>
+///         prefixed <c>"SHASHU Provider Error: "</c>.</item>
 ///   <item><b>An Anthropic-shaped envelope</b> — on <c>/v1/messages</c> with
-///         <c>TRUSTGATE_WIRE_SHAPE_MESSAGES=enforce</c>, the gateway rewrites
+///         <c>the messages wire-shape flag</c>, the gateway rewrites
 ///         access-decision 403s into Anthropic's error shape and
 ///         <see cref="ErrorType"/> reads <c>"permission_error"</c>.</item>
 /// </list>
@@ -711,8 +741,8 @@ public class ShashuException : Exception
 /// every 403); on the legacy contract it is <c>"invalid_request_error"</c>
 /// for every 4xx the gateway raises itself — a 401, a 403 and a 422 are
 /// indistinguishable by it. Branch on <see cref="ShashuException.StatusCode"/>. Sub-typing
-/// budget-vs-policy is tracked as <c>TRUSTGATE-403-DISCRIMINATOR</c> and is not
-/// available today — <see href="https://github.com/aisquad001/trustgate-ai/issues/736">trustgate-ai#736</see>.</para>
+/// budget-vs-policy is tracked as <c>the 403 discriminator ticket</c> and is not
+/// available today.</para>
 /// </remarks>
 public class ShashuPolicyViolation : ShashuException
 {

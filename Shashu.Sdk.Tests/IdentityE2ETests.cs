@@ -145,7 +145,7 @@ public class IdentityE2ETests
         NeedShashu();
         Skip.If(Env("SHASHU_E2E_KEY") is null, "SHASHU_E2E_KEY not set");
         var key = Env("SHASHU_E2E_KEY")!;
-        Assert.StartsWith("tg_sk_", key);
+        Assert.StartsWith("shashu_sk_", key);
         var cfg = Base();
         cfg.ApiKey = key;
         await using var client = new ShashuClient(cfg);

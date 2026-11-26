@@ -31,7 +31,7 @@ namespace Shashu.Internal;
 ///   still carries the declaration, and a multi-gigabyte file upload does not
 ///   eat it.</description></item>
 /// </list>
-/// <para>Sibling of the Python SDK's <c>trustgate/_joiner.py</c> and the Node
+/// <para>Sibling of the Python SDK's <c>shashu/_joiner.py</c> and the Node
 /// SDK's <c>src/_joiner.ts</c>.</para>
 /// </remarks>
 internal static class RetrievalJoiner
@@ -69,7 +69,7 @@ internal static class RetrievalJoiner
             // The declaration is lost, the request goes out as the customer
             // built it. Nothing about the document text is logged.
             Console.Error.WriteLine(
-                $"[trustgate.retrieval] declaration not attached: {ex.GetType().Name}");
+                $"[shashu.retrieval] declaration not attached: {ex.GetType().Name}");
         }
     }
 

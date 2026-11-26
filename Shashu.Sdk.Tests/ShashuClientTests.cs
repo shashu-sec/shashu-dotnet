@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using Shashu;
 using Shashu.Chat;
 using Xunit;
@@ -28,7 +29,7 @@ public class ShashuClientTests
     [Fact]
     public void Ctor_PicksUpEnvVarApiKey()
     {
-        Environment.SetEnvironmentVariable("SHASHU_API_KEY", "sk-trustgate-from-env");
+        Environment.SetEnvironmentVariable("SHASHU_API_KEY", "sk-shashu-from-env");
         try
         {
             using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri });
@@ -50,7 +51,7 @@ public class ShashuClientTests
         {
             Assert.Equal(HttpMethod.Post, req.Method);
             Assert.Equal("/v1/chat/completions", req.RequestUri!.AbsolutePath);
-            Assert.Equal("Bearer sk-trustgate-test", req.Headers.Authorization!.ToString());
+            Assert.Equal("Bearer sk-shashu-test", req.Headers.Authorization!.ToString());
             Assert.Contains("shashu-dotnet/", req.Headers.UserAgent.ToString());
 
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
@@ -77,7 +78,7 @@ public class ShashuClientTests
 
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         var resp = await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
         {
@@ -112,7 +113,7 @@ public class ShashuClientTests
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", MaxRetries = 2 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 2 }, http);
 
         var ex = await Assert.ThrowsAsync<ShashuException>(() =>
             client.Chat.Completions.CreateAsync(new ChatCompletionRequest
@@ -142,7 +143,7 @@ public class ShashuClientTests
             new ShashuConfig
             {
                 BaseUrl = TestGateway.Uri,
-                ApiKey = "sk-trustgate-test",
+                ApiKey = "sk-shashu-test",
                 MaxRetries = 1,
                 LegacyRetryPolicy = true,
             }, http);
@@ -177,7 +178,7 @@ public class ShashuClientTests
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", MaxRetries = 2 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 2 }, http);
 
         var resp = await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
         {
@@ -197,13 +198,15 @@ public class ShashuClientTests
             var n = Interlocked.Increment(ref calls);
             if (n == 1)
             {
-                throw new HttpRequestException("connection reset");
+                throw new HttpRequestException(
+                    "connection refused",
+                    new SocketException((int)SocketError.ConnectionRefused));
             }
             return Task.FromResult(OkCompletion());
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", MaxRetries = 2 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 2 }, http);
 
         var resp = await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
         {
@@ -212,6 +215,30 @@ public class ShashuClientTests
         });
         Assert.Equal("chatcmpl-fake-1", resp.Id);
         Assert.Equal(2, calls); // connection error retried then succeeded
+    }
+
+    [Fact]
+    public async Task ChatCompletions_DropAfterSend_IsNotRetried()
+    {
+        var calls = 0;
+        var stub = new StubHandler((_, _) =>
+        {
+            Interlocked.Increment(ref calls);
+            throw new HttpRequestException(
+                "The response ended prematurely.",
+                new IOException("The response ended prematurely."));
+        });
+        using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
+        using var client = new ShashuClient(
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 2 }, http);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            client.Chat.Completions.CreateAsync(new ChatCompletionRequest
+            {
+                Model = "gpt-4o",
+                Messages = new[] { new ChatMessage("user", "hi") },
+            }));
+        Assert.Equal(1, calls);
     }
 
     [Fact]
@@ -229,7 +256,7 @@ public class ShashuClientTests
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", MaxRetries = 2 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 2 }, http);
 
         await Assert.ThrowsAsync<ShashuPolicyViolation>(() =>
             client.Chat.Completions.CreateAsync(new ChatCompletionRequest

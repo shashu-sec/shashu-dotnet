@@ -33,7 +33,7 @@ namespace Shashu.Routing;
 ///
 /// <para>Usage — wire the handler into any HttpClient:
 ///   <code>
-///   var handler = new ShashuRoutingHandler("tg_sk_...", new HttpClientHandler());
+///   var handler = new ShashuRoutingHandler("shashu_sk_...", new HttpClientHandler());
 ///   var http    = new HttpClient(handler) { BaseAddress = new Uri("https://api.openai.com") };
 ///   // Any vendor SDK that lets you inject HttpClient now routes through Shashu.
 ///   </code>

@@ -19,7 +19,7 @@ public class ShashuRoutingHandlerTests
         var captured = new CapturingInnerHandler();
         var opts = new ShashuRoutingOptions { BaseUrl = new Uri(gatewayUrl) };
         var handler = new ShashuRoutingHandler(
-            apiKey: "sk-trustgate-fake",
+            apiKey: "sk-shashu-fake",
             innerHandler: captured,
             options: opts);
         return (handler, captured);
@@ -42,7 +42,7 @@ public class ShashuRoutingHandlerTests
         var seen = captured.LastRequest!;
         Assert.Equal("gateway.test.invalid", seen.RequestUri!.Host);
         Assert.Equal("/v1/chat/completions", seen.RequestUri.AbsolutePath);
-        Assert.Equal("Bearer sk-trustgate-fake", seen.Headers.Authorization!.ToString());
+        Assert.Equal("Bearer sk-shashu-fake", seen.Headers.Authorization!.ToString());
         // Vendor key dropped:
         Assert.False(seen.Headers.Authorization.Parameter == "sk-real-openai-key");
         Assert.True(seen.Headers.Contains("x-shashu-trace-id"));
@@ -54,7 +54,7 @@ public class ShashuRoutingHandlerTests
     {
         var inner = new SequenceInnerHandler();
         var handler = new ShashuRoutingHandler(
-            "sk-trustgate-fake",
+            "sk-shashu-fake",
             inner,
             new ShashuRoutingOptions { BaseUrl = new Uri("https://gateway.test.invalid/") });
         var http = new HttpClient(handler);
@@ -86,7 +86,7 @@ public class ShashuRoutingHandlerTests
         var seen = captured.LastRequest!;
         Assert.Equal("gateway.test.invalid", seen.RequestUri!.Host);
         Assert.Equal("/v1/messages", seen.RequestUri.AbsolutePath);
-        Assert.Equal("Bearer sk-trustgate-fake", seen.Headers.Authorization!.ToString());
+        Assert.Equal("Bearer sk-shashu-fake", seen.Headers.Authorization!.ToString());
         // Vendor-specific auth headers stripped — gateway never forwards them.
         Assert.False(seen.Headers.Contains("x-api-key"));
         Assert.False(seen.Headers.Contains("anthropic-version"));
@@ -111,7 +111,7 @@ public class ShashuRoutingHandlerTests
         // Google's vendor path is mapped to the gateway's OpenAI-compatible endpoint;
         // gateway has a Google-shape adapter that reshapes the body server-side.
         Assert.Equal("/v1/chat/completions", seen.RequestUri.AbsolutePath);
-        Assert.Equal("Bearer sk-trustgate-fake", seen.Headers.Authorization!.ToString());
+        Assert.Equal("Bearer sk-shashu-fake", seen.Headers.Authorization!.ToString());
         Assert.False(seen.Headers.Contains("x-goog-api-key"));
     }
 
@@ -187,7 +187,7 @@ public class ShashuRoutingHandlerTests
             BaseUrl = new Uri("https://gateway.test.invalid/"),
         };
         var handler = global::Shashu.Patching.ProviderPatch.AsHttpHandler(
-            apiKey: "sk-trustgate-fake", options: opts, innerHandler: captured);
+            apiKey: "sk-shashu-fake", options: opts, innerHandler: captured);
         var http = new HttpClient(handler);
 
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
@@ -195,12 +195,12 @@ public class ShashuRoutingHandlerTests
 
         Assert.Equal("https://gateway.test.invalid/v1/chat/completions",
             captured.LastRequest!.RequestUri!.ToString());
-        Assert.Equal("Bearer sk-trustgate-fake",
+        Assert.Equal("Bearer sk-shashu-fake",
             captured.LastRequest!.Headers.Authorization!.ToString());
 
         // The alias handler is the routing handler, not a look-alike.
         var direct = new global::Shashu.Patching.ShashuRoutingHandler(
-            "sk-trustgate-fake", new CapturingInnerHandler(), opts);
+            "sk-shashu-fake", new CapturingInnerHandler(), opts);
         Assert.IsAssignableFrom<ShashuRoutingHandler>(direct);
         Assert.IsAssignableFrom<ShashuRoutingOptions>(opts);
     }
@@ -217,7 +217,7 @@ public class ShashuRoutingHandlerTests
     [Fact]
     public async Task Shashu_facade_picks_up_env_var_api_key()
     {
-        Environment.SetEnvironmentVariable("SHASHU_API_KEY", "sk-trustgate-env-key");
+        Environment.SetEnvironmentVariable("SHASHU_API_KEY", "sk-shashu-env-key");
         try
         {
             var captured = new CapturingInnerHandler();
@@ -229,7 +229,7 @@ public class ShashuRoutingHandlerTests
             using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
             await http.SendAsync(req);
 
-            Assert.Equal("Bearer sk-trustgate-env-key", captured.LastRequest!.Headers.Authorization!.ToString());
+            Assert.Equal("Bearer sk-shashu-env-key", captured.LastRequest!.Headers.Authorization!.ToString());
         }
         finally
         {

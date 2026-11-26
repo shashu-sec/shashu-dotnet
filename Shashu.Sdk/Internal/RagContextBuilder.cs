@@ -11,7 +11,7 @@ namespace Shashu.Internal;
 /// and folds the carried declarations into the one block the joiner attaches.
 /// </summary>
 /// <remarks>
-/// Sibling of the Python SDK's <c>trustgate/rag.py</c> and the Node SDK's
+/// Sibling of the Python SDK's <c>shashu/rag.py</c> and the Node SDK's
 /// <c>src/rag.ts</c>. The reading rules are a DATA table
 /// (<see cref="FieldKeys"/>) rather than a chain of branches, so a document
 /// type that spells its fields the usual way needs no new code at all — and

@@ -29,7 +29,7 @@ public sealed class ShashuClient : IAsyncDisposable, IDisposable
     /// User-Agent so server-side telemetry can attribute traffic to a
     /// specific SDK version.
     /// </summary>
-    public const string SdkVersion = "1.1.1";
+    public const string SdkVersion = "1.2.0";
 
     private readonly HttpClient _http;
     private readonly bool _ownsHttp;

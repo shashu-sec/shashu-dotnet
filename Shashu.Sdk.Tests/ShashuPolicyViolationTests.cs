@@ -115,9 +115,9 @@ public class ShashuPolicyViolationTests
     {
         // Captured shape of an upstream failure: the gateway wraps the provider
         // error in the OpenAI envelope and puts the provider-error class name
-        // in `type`, with the message prefixed "Shashu Provider Error:".
+        // in `type`, with the message prefixed "SHASHU Provider Error:".
         using var client = BuildClient(
-            "{\"error\":{\"message\":\"Shashu Provider Error: upstream provider down\","
+            "{\"error\":{\"message\":\"SHASHU Provider Error: upstream provider down\","
             + "\"type\":\"ProviderServerError\",\"param\":null,\"code\":\"502\"},\"choices\":[]}",
             HttpStatusCode.BadGateway);
 
@@ -132,8 +132,8 @@ public class ShashuPolicyViolationTests
         Assert.Equal(502, ex.StatusCode);
     }
 
-    [Fact(Skip = "Asserts an UNIMPLEMENTED contract: TRUSTGATE-403-DISCRIMINATOR "
-        + "(https://github.com/aisquad001/trustgate-ai/issues/736). "
+    [Fact(Skip = "Asserts an UNIMPLEMENTED contract: the 403 discriminator ticket "
+        + "(the gateway issue tracker). "
         + "The gateway has never emitted error.type=\"policy_violation\" — every 4xx it raises "
         + "itself carries \"invalid_request_error\" (proxy/helpers.py::_openai_error_response and "
         + "main.py::http_exception_handler). This test passed only because FixedResponseHandler "
@@ -165,7 +165,7 @@ public class ShashuPolicyViolationTests
         var handler = new FixedResponseHandler(body, status);
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://test.invalid/") };
         return new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", MaxRetries = 0 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 0 }, http);
     }
 }
 

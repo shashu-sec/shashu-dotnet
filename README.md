@@ -1,11 +1,11 @@
 # SHASHU .NET SDK
 
-.NET client for **SHASHU by Trustgate AI**, a self-hosted AI security gateway.
+.NET client for **SHASHU**, a self-hosted AI security gateway.
 Point it at your own gateway. There is no default hostname: construction
 raises a configuration error rather than guessing.
 
 Wire names (`x-shashu-*`, `shashu_metadata`, `shashu-version`,
-`tg_sk_`) are protocol names on the SHASHU wire and are unchanged.
+`shashu_sk_`) are protocol names on the SHASHU wire and are unchanged.
 
 After this first mention, this document says **SHASHU**.
 
@@ -29,7 +29,7 @@ Key:
 await using var client = new ShashuClient(new ShashuConfig
 {
     BaseUrl = new Uri("https://your-shashu-gateway.example"),
-    ApiKey = "tg_sk_...",
+    ApiKey = "shashu_sk_...",
 });
 var response = await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
 {

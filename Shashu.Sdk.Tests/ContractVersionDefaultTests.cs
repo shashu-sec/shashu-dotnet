@@ -105,7 +105,7 @@ public class ContractVersionDefaultTests
     {
         var captured = new CapturingInnerHandler();
         var handler = new ShashuRoutingHandler(
-            "sk-trustgate-fake", captured, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri });
+            "sk-shashu-fake", captured, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri });
         using var http = new HttpClient(handler);
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
         {
@@ -123,7 +123,7 @@ public class ContractVersionDefaultTests
     {
         var captured = new CapturingInnerHandler();
         var handler = new ShashuRoutingHandler(
-            "sk-trustgate-fake", captured, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri });
+            "sk-shashu-fake", captured, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri });
         using var http = new HttpClient(handler);
 
         await http.GetAsync("https://example.com/health");
@@ -136,7 +136,7 @@ public class ContractVersionDefaultTests
     {
         var captured = new CapturingInnerHandler();
         var handler = new ShashuRoutingHandler(
-            "sk-trustgate-fake", captured, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri });
+            "sk-shashu-fake", captured, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri });
         using var http = new HttpClient(handler);
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
         req.Headers.TryAddWithoutValidation(Header, "2026-10-01");
@@ -152,7 +152,7 @@ public class ContractVersionDefaultTests
     {
         var captured = new CapturingInnerHandler();
         var handler = new ShashuRoutingHandler(
-            "sk-trustgate-fake", captured,
+            "sk-shashu-fake", captured,
             new ShashuRoutingOptions { BaseUrl = TestGateway.Uri, ContractVersion = null });
         using var http = new HttpClient(handler);
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
@@ -352,7 +352,7 @@ public class ContractVersionDefaultTests
         var recorder = new HeaderRecorder(status, body, contentType);
         var http = new HttpClient(recorder) { BaseAddress = TestGateway.Uri };
         configure?.Invoke(http);
-        var opts = new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", MaxRetries = 0 };
+        var opts = new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 0 };
         options?.Invoke(opts);
         return (new ShashuClient(opts, http), recorder);
     }

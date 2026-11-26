@@ -63,8 +63,7 @@ public class SdkSurfaceTests
 
         Assert.NotNull(row);
         Assert.Contains($"static holder named `{Surface.Name}`", row);
-        // Vendored gateway page still names the .NET holder TrustGate.Retrieval.
-        Assert.Contains("using static TrustGate.Retrieval;", row);
+        Assert.Contains("using static Shashu.Retrieval;", row);
         Assert.Contains("DeclareRetrieval(docs, corpus: ...)", row);
     }
 

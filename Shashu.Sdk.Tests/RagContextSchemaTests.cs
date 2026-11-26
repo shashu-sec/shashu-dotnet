@@ -50,7 +50,7 @@ public class RagContextSchemaTests
     {
         Assert.True(RagContextSchema.Directory.Exists);
         Assert.Equal(
-            "https://trustgateai.io/contracts/rag_context.v1.schema.json",
+            "https://shashu.ai/contracts/rag_context.v1.schema.json",
             RagContextSchema.Document["$id"]!.GetValue<string>());
     }
 

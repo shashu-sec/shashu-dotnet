@@ -283,7 +283,7 @@ public class A2APropagationTests
     [Fact]
     public void Client_invocation_uses_seeded_self_id()
     {
-        using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", AgentId = "seed-self" });
+        using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", AgentId = "seed-self" });
         Assert.Equal("seed-self", client.AgentId);
         using (Tracer.Incoming(H(("x-shashu-trace-id", "F"), ("x-shashu-hop-depth", "1"))))
         {
@@ -297,7 +297,7 @@ public class A2APropagationTests
     [Fact]
     public void Client_invocation_throws_when_self_unknown()
     {
-        using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" });
+        using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" });
         Assert.Throws<InvalidOperationException>(() => client.BuildInvocationHeaders());
     }
 
@@ -314,7 +314,7 @@ public class A2APropagationTests
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", AgentId = "explicit-seed" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", AgentId = "explicit-seed" }, http);
 
         using (Tracer.Incoming(H(
             ("x-shashu-trace-id", "flow-A"), ("x-shashu-hop-depth", "1"),
@@ -345,7 +345,7 @@ public class A2APropagationTests
             return Task.FromResult(resp);
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
-        using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+        using var client = new ShashuClient(new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         await Assert.ThrowsAsync<ShashuPolicyViolation>(() =>
             client.Chat.Completions.CreateAsync(new ChatCompletionRequest
@@ -367,7 +367,7 @@ public class A2APropagationTests
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", AgentId = "seeded" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", AgentId = "seeded" }, http);
 
         using (Tracer.Incoming(H())) // origin
         {

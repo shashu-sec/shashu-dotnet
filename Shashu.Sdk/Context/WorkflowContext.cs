@@ -8,7 +8,7 @@ namespace Shashu.Context;
 /// Builds the <c>x-shashu-*</c> + <c>x-trustlog-*</c> headers that
 /// give the gateway Shadow AI attribution and runtime context for every
 /// request. The Python SDK calls the same logic
-/// <c>build_trustgate_headers()</c>; we keep the produced header map
+/// <c>build_shashu_headers()</c>; we keep the produced header map
 /// shape identical for cross-SDK parity.
 /// </summary>
 /// <remarks>

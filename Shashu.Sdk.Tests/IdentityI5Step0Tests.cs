@@ -24,7 +24,7 @@ public class IdentityI5Step0Tests
             new ShashuConfig
             {
                 BaseUrl = new Uri("http://127.0.0.1:9"),
-                ApiKey = "tg_sk_test",
+                ApiKey = "shashu_sk_test",
             },
             http);
         Assert.Null(http.DefaultRequestHeaders.Authorization);

@@ -8,7 +8,7 @@ namespace Shashu;
 public sealed class ShashuConfig
 {
     /// <summary>
-    /// API key for the agent (<c>tg_sk_...</c>). If unset when constructing a
+    /// API key for the agent (<c>shashu_sk_...</c>). If unset when constructing a
     /// client, <c>SHASHU_API_KEY</c> is read, then <c>SHASHU_API_KEY</c>
     /// (warns once). Give either this or <see cref="TokenProvider"/>, not both.
     /// </summary>
@@ -113,5 +113,5 @@ public sealed class ShashuConfig
     /// Default user-agent. Override only for testing or for proxy/CDN
     /// debugging. The default identifies the SDK + version for telemetry.
     /// </summary>
-    public string UserAgent { get; set; } = "shashu-dotnet/1.1.1";
+    public string UserAgent { get; set; } = "shashu-dotnet/1.2.0";
 }

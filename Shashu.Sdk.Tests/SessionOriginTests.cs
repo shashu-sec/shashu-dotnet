@@ -125,7 +125,7 @@ public class SessionOriginTests
             new ShashuConfig
             {
                 BaseUrl = TestGateway.Uri,
-                ApiKey = "sk-trustgate-test",
+                ApiKey = "sk-shashu-test",
                 SessionId = sessionId,
             },
             http);

@@ -336,7 +336,7 @@ public static class Tracer
             if (Interlocked.Exchange(ref _warnedUnconfigured, 1) == 0)
             {
                 Console.Error.WriteLine(
-                    "[trustgate.tracer] no gateway address configured, so spans are being "
+                    "[shashu.tracer] no gateway address configured, so spans are being "
                     + "discarded. Pass gatewayBaseUrl to Tracer.Configure(), or set one of the "
                     + "SHASHU_BASE_URL environment variables. SHASHU is self-hosted: "
                     + "the SDK has no default address and will not guess one.");
@@ -359,7 +359,7 @@ public static class Tracer
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[trustgate.tracer] flush failed: {ex.Message}");
+            Console.Error.WriteLine($"[shashu.tracer] flush failed: {ex.Message}");
         }
     }
 

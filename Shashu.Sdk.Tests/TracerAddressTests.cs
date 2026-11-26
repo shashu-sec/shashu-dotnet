@@ -22,7 +22,7 @@ public class TracerAddressTests
     {
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
         using var __l = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        using var __ = new EnvVar("SHASHU_API_KEY", "sk-trustgate-test");
+        using var __ = new EnvVar("SHASHU_API_KEY", "sk-shashu-test");
 
         using (Tracer.Span("unconfigured")) { }
 
@@ -38,7 +38,7 @@ public class TracerAddressTests
         // from a process-exit hook. An address without a scheme must degrade to
         // "no telemetry", not to an exception during shutdown.
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        Tracer.Configure("sk-trustgate-test", "localhost:8000");
+        Tracer.Configure("sk-shashu-test", "localhost:8000");
         try
         {
             using (Tracer.Span("bad-address")) { }
@@ -46,7 +46,7 @@ public class TracerAddressTests
         }
         finally
         {
-            Tracer.Configure("sk-trustgate-test", null);
+            Tracer.Configure("sk-shashu-test", null);
         }
     }
 
@@ -55,7 +55,7 @@ public class TracerAddressTests
     {
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
         using var __l = new EnvVar(ShashuEnv.BaseUrlEnv, null);
-        using var __ = new EnvVar("SHASHU_API_KEY", "sk-trustgate-test");
+        using var __ = new EnvVar("SHASHU_API_KEY", "sk-shashu-test");
 
         var captured = new StringWriter();
         var previous = Console.Error;
@@ -77,7 +77,7 @@ public class TracerAddressTests
         // The warning is latched process-wide, so another test in this
         // collection may already have consumed it. What must hold either way:
         // it is never emitted more than once, and it never suggests a host.
-        var occurrences = text.Split("[trustgate.tracer] no gateway address").Length - 1;
+        var occurrences = text.Split("[shashu.tracer] no gateway address").Length - 1;
         Assert.True(occurrences <= 1, $"warned {occurrences} times, expected at most once");
 
         foreach (var fragment in new[] { "trustgateai.io", "trustgate.ai", "https://", "http://" })

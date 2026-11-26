@@ -23,7 +23,7 @@ public class Sdk11WireTests
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "tg_sk_test", MaxRetries = 0 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "shashu_sk_test", MaxRetries = 0 }, http);
         await client.Chat.Completions.CreateAsync(Req());
         Assert.NotNull(seen);
         Assert.DoesNotContain(seen!.Headers, h =>
@@ -96,7 +96,7 @@ public class Sdk11WireTests
         });
         using var http = new HttpClient(stub) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "tg_sk_test", MaxRetries = 0 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "shashu_sk_test", MaxRetries = 0 }, http);
         await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
         {
             Model = "m",
@@ -117,10 +117,10 @@ public class Sdk11WireTests
     {
         Assert.Equal("Give either a SHASHU key or a token provider, not both.", CredentialResolver.BothOrNeither);
         var ex = Assert.Throws<ShashuConfigException>(() =>
-            new CredentialResolver("tg_sk_x", _ => ValueTask.FromResult("p"), true));
+            new CredentialResolver("shashu_sk_x", _ => ValueTask.FromResult("p"), true));
         Assert.Equal(CredentialResolver.BothOrNeither, ex.Message);
-        var r = new CredentialResolver("tg_sk_x", requireOne: true);
-        Assert.Equal("tg_sk_x", await r.GetAsync());
+        var r = new CredentialResolver("shashu_sk_x", requireOne: true);
+        Assert.Equal("shashu_sk_x", await r.GetAsync());
     }
 
     [Fact]

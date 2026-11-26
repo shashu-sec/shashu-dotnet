@@ -17,7 +17,7 @@ namespace Shashu.Routing;
 /// using Shashu.Routing;
 ///
 /// // Once at app startup:
-/// var handler = GatewayRouting.AsHttpHandler("sk-trustgate-...");
+/// var handler = GatewayRouting.AsHttpHandler("sk-shashu-...");
 /// var http    = new HttpClient(handler);
 ///
 /// // Pass to whatever vendor SDK accepts a custom HttpClient:
@@ -40,7 +40,7 @@ public static class GatewayRouting
     /// through the Shashu gateway. Pass to any vendor SDK that accepts a
     /// custom <c>HttpClient</c>.
     /// </summary>
-    /// <param name="apiKey">Shashu API key (sk-trustgate-...). Falls back to <c>SHASHU_API_KEY</c> env var.</param>
+    /// <param name="apiKey">Shashu API key (sk-shashu-...). Falls back to <c>SHASHU_API_KEY</c> env var.</param>
     /// <param name="options">Optional gateway URL + org-id override.</param>
     /// <param name="innerHandler">Optional inner HTTP handler. Defaults to <c>HttpClientHandler</c>.</param>
     public static HttpMessageHandler AsHttpHandler(

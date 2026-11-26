@@ -124,7 +124,7 @@ public class UnknownValuesToleratedTests
             BaseAddress = TestGateway.Uri,
         };
         return new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", MaxRetries = 0 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 0 }, http);
     }
 }
 

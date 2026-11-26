@@ -21,7 +21,7 @@ public class AuditTests
         var capture = new AuditCapturingHandler(verdict: "WOULD_BLOCK", isThreat: true);
         using var http = new HttpClient(capture) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         var resp = await client.Audit.EventsAsync(new AuditEventRequest
         {
@@ -65,7 +65,7 @@ public class AuditTests
         var capture = new AuditCapturingHandler(verdict: "CLEAN", isThreat: false);
         using var http = new HttpClient(capture) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         await client.Audit.EventsAsync(new AuditEventRequest
         {
@@ -92,7 +92,7 @@ public class AuditTests
             bodyOverride: "{\"error\":{\"message\":\"Vendor source not configured for this tenant\"}}");
         using var http = new HttpClient(capture) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test", MaxRetries = 0 }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test", MaxRetries = 0 }, http);
 
         var ex = await Assert.ThrowsAsync<ShashuPolicyViolation>(() =>
             client.Audit.EventsAsync(new AuditEventRequest

@@ -41,7 +41,7 @@ public class IdentityCloudPassTests
             new ShashuClient(new ShashuConfig
             {
                 BaseUrl = TestGateway.Uri,
-                ApiKey = "tg_sk_x",
+                ApiKey = "shashu_sk_x",
                 TokenProvider = _ => ValueTask.FromResult("p"),
             }));
         Assert.Equal(CredentialResolver.BothOrNeither, ex.Message);
@@ -154,7 +154,7 @@ public class IdentityCloudPassTests
         using var client = new ShashuClient(new ShashuConfig
         {
             BaseUrl = TestGateway.Uri,
-            ApiKey = "tg_sk_test",
+            ApiKey = "shashu_sk_test",
             MaxRetries = 0,
         }, http);
         var ex = await Assert.ThrowsAsync<ShashuAuthenticationException>(() => Chat(client));

@@ -33,7 +33,7 @@ public class RetrievalHarnessTests
     {
         var gateway = new MockGateway();
         var handler = new ShashuRoutingHandler(
-            "sk-trustgate-test",
+            "sk-shashu-test",
             gateway,
             new ShashuRoutingOptions { BaseUrl = TestGateway.Uri });
         return (new HttpClient(handler), gateway);

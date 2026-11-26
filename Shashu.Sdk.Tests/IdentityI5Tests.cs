@@ -43,7 +43,7 @@ public class IdentityI5Tests : IDisposable
     {
         using var http = new HttpClient();
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = new Uri("http://127.0.0.1:9"), ApiKey = "tg_sk_test" },
+            new ShashuConfig { BaseUrl = new Uri("http://127.0.0.1:9"), ApiKey = "shashu_sk_test" },
             http);
         Assert.Null(http.DefaultRequestHeaders.Authorization);
     }
@@ -55,7 +55,7 @@ public class IdentityI5Tests : IDisposable
             new ShashuClient(new ShashuConfig
             {
                 BaseUrl = TestGateway.Uri,
-                ApiKey = "tg_sk_x",
+                ApiKey = "shashu_sk_x",
                 TokenProvider = _ => new ValueTask<string>("p"),
             }));
         Assert.Equal(CredentialResolver.BothOrNeither, both.Message);
@@ -315,7 +315,7 @@ public class IdentityI5Tests : IDisposable
         using var tg = new ShashuClient(new ShashuConfig
         {
             BaseUrl = TestGateway.Uri,
-            ApiKey = "tg_sk_test",
+            ApiKey = "shashu_sk_test",
             MaxRetries = 0,
         }, http);
         var ex = await Assert.ThrowsAsync<ShashuAuthenticationException>(() => Create(tg));
@@ -336,10 +336,10 @@ public class IdentityI5Tests : IDisposable
         using var tg = new ShashuClient(new ShashuConfig
         {
             BaseUrl = TestGateway.Uri,
-            ApiKey = "tg_sk_test",
+            ApiKey = "shashu_sk_test",
         }, http);
         await Create(tg);
-        Assert.Equal("Bearer tg_sk_test", auth);
+        Assert.Equal("Bearer shashu_sk_test", auth);
     }
 
     [Fact]

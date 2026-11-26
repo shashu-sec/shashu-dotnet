@@ -200,7 +200,7 @@ public class ShashuContentFilterExceptionTests
                 // There is no default gateway address; an unset one throws
                 // ShashuConfigException rather than guessing a host.
                 BaseUrl = TestGateway.Uri,
-                ApiKey = "sk-trustgate-test",
+                ApiKey = "sk-shashu-test",
                 MaxRetries = 0,
             },
             http);

@@ -32,7 +32,7 @@ public class MemorySurfaceTests
         var page = File.ReadAllText(Path.Combine(
             RagContextSchema.Directory.FullName, "sdk-surface.v1.md"));
         Assert.Contains("Memory.MemoryScope(items, store)", page);
-        Assert.Contains("TrustGate.Memory.DeclareMemory(items, store:", page);
+        Assert.Contains("Shashu.Memory.DeclareMemory(items, store:", page);
     }
 
     [Fact]

@@ -23,7 +23,7 @@ public class RagContextTests
         var capture = new JsonBodyCapturingHandler();
         using var http = new HttpClient(capture) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
         {
@@ -59,7 +59,7 @@ public class RagContextTests
         var capture = new JsonBodyCapturingHandler();
         using var http = new HttpClient(capture) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
         {
@@ -86,7 +86,7 @@ public class RagContextTests
         var capture = new JsonBodyCapturingHandler();
         using var http = new HttpClient(capture) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
         {
@@ -108,7 +108,7 @@ public class RagContextTests
         var capture = new JsonBodyCapturingHandler();
         using var http = new HttpClient(capture) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-trustgate-test" }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "sk-shashu-test" }, http);
 
         await client.Chat.Completions.CreateAsync(new ChatCompletionRequest
         {

@@ -60,7 +60,7 @@ namespace Shashu.Internal;
 /// a gateway-side defect tracked separately and the SDK speaks the
 /// contract.</para>
 ///
-/// <para>Sibling of the Python SDK's <c>trustgate/_bus.py</c> and the Node
+/// <para>Sibling of the Python SDK's <c>shashu/_bus.py</c> and the Node
 /// SDK's <c>src/_bus.ts</c>.</para>
 /// </remarks>
 internal static class RetrievalBus

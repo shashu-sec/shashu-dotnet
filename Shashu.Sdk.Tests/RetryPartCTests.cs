@@ -126,7 +126,7 @@ public class RetryPartCTests
     {
         var inner = new PerCorpusBusyThenOk();
         var handler = new ShashuRoutingHandler(
-            "sk-trustgate-fake",
+            "sk-shashu-fake",
             inner,
             new ShashuRoutingOptions { BaseUrl = TestGateway.Uri });
         using var http = new HttpClient(handler);
@@ -157,6 +157,22 @@ public class RetryPartCTests
     }
 
     [Fact]
+    public async Task C12_client_declaration_survives_busy_retry()
+    {
+        var cap = new CaptureStub(BusyThenOk);
+        Retrieval.DeclareRetrieval(new[] { "g6 declared document" }, corpus: "g6_corpus", query: "g6 query");
+        await Call(cap, maxRetries: 2);
+        Assert.Equal(2, cap.Bodies.Count);
+        Assert.Equal(cap.Bodies[0], cap.Bodies[1]);
+        foreach (var raw in cap.Bodies)
+        {
+            var text = Encoding.UTF8.GetString(raw);
+            Assert.Contains("g6_corpus", text);
+            Assert.Contains("g6 declared document", text);
+        }
+    }
+
+    [Fact]
     public async Task C11_trace_and_session_frozen()
     {
         var cap = new CaptureStub(BusyThenOk);
@@ -171,7 +187,7 @@ public class RetryPartCTests
     {
         using var http = new HttpClient(cap) { BaseAddress = new Uri("https://test.invalid/") };
         using var client = new ShashuClient(
-            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "tg_sk_same", MaxRetries = maxRetries }, http);
+            new ShashuConfig { BaseUrl = TestGateway.Uri, ApiKey = "shashu_sk_same", MaxRetries = maxRetries }, http);
         await client.Chat.Completions.CreateAsync(Req("hi"));
     }
 

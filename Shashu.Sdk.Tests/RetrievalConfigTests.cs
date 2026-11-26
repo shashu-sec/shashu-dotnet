@@ -41,7 +41,7 @@ public class RetrievalConfigTests
 
         var gateway = new MockGateway();
         using (var client = new HttpClient(new ShashuRoutingHandler(
-            "sk-trustgate-test", gateway, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri })))
+            "sk-shashu-test", gateway, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri })))
         {
             using var response = await client.SendAsync(
                 new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
@@ -67,7 +67,7 @@ public class RetrievalConfigTests
 
         var gateway = new MockGateway();
         using (var client = new HttpClient(new ShashuRoutingHandler(
-            "sk-trustgate-test", gateway, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri })))
+            "sk-shashu-test", gateway, new ShashuRoutingOptions { BaseUrl = TestGateway.Uri })))
         {
             using var response = await client.SendAsync(
                 new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
@@ -114,7 +114,7 @@ public class RetrievalConfigTests
         using var __ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
 
         var ex = Assert.Throws<ShashuConfigException>(() =>
-            new ShashuClient(new ShashuConfig { ApiKey = "sk-trustgate-test" }));
+            new ShashuClient(new ShashuConfig { ApiKey = "sk-shashu-test" }));
 
         AssertFrozenMessage(ex.Message, "new ShashuClient()", "ShashuConfig.BaseUrl");
     }
@@ -126,7 +126,7 @@ public class RetrievalConfigTests
         using var __ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
 
         var ex = Assert.Throws<ShashuConfigException>(() =>
-            new ShashuRoutingHandler("sk-trustgate-test"));
+            new ShashuRoutingHandler("sk-shashu-test"));
 
         AssertFrozenMessage(
             ex.Message, "new ShashuRoutingHandler()", "ShashuRoutingOptions.BaseUrl");
@@ -139,7 +139,7 @@ public class RetrievalConfigTests
         using var __ = new EnvVar(ShashuEnv.BaseUrlEnv, null);
 
         var message = Assert.Throws<ShashuConfigException>(() =>
-            new ShashuClient(new ShashuConfig { ApiKey = "sk-trustgate-test" })).Message;
+            new ShashuClient(new ShashuConfig { ApiKey = "sk-shashu-test" })).Message;
 
         Assert.Contains("SHASHU_BASE_URL", message, StringComparison.Ordinal);
         Assert.Contains("SHASHU_BASE_URL", message, StringComparison.Ordinal);
@@ -160,7 +160,7 @@ public class RetrievalConfigTests
         using var _ = new EnvVar(ShashuEnv.BaseUrlEnv, "https://gw.internal.example.invalid/");
 
         using var client = new ShashuClient(
-            new ShashuConfig { ApiKey = "sk-trustgate-test" });
+            new ShashuConfig { ApiKey = "sk-shashu-test" });
 
         Assert.NotNull(client.Chat);
     }
@@ -184,7 +184,7 @@ public class RetrievalConfigTests
 
         // A caller with one catch around their gateway calls still catches it.
         var ex = Assert.Throws<ShashuConfigException>(() =>
-            new ShashuClient(new ShashuConfig { ApiKey = "sk-trustgate-test" }));
+            new ShashuClient(new ShashuConfig { ApiKey = "sk-shashu-test" }));
 
         Assert.IsAssignableFrom<ShashuException>(ex);
         Assert.Equal(0, ex.StatusCode);          // no request was ever made
