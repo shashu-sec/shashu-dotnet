@@ -113,5 +113,5 @@ public sealed class ShashuConfig
     /// Default user-agent. Override only for testing or for proxy/CDN
     /// debugging. The default identifies the SDK + version for telemetry.
     /// </summary>
-    public string UserAgent { get; set; } = "shashu-dotnet/1.2.0";
+    public string UserAgent { get; set; } = "shashu-dotnet/1.3.0";
 }

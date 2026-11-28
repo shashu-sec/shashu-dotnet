@@ -22,4 +22,8 @@
     <ProjectReference Include="..\Shashu.Sdk\Shashu.Sdk.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Golden/*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

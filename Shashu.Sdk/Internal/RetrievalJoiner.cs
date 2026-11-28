@@ -28,22 +28,16 @@ namespace Shashu.Internal;
 ///   <item><description><b>Never corrupt a body it does not understand.</b> A
 ///   non-JSON body, a non-object JSON body, or a streaming upload is passed
 ///   through untouched and does NOT consume the bus — the next real model call
-///   still carries the declaration, and a multi-gigabyte file upload does not
-///   eat it.</description></item>
+///   still carries the declaration, and a file upload does not eat it. A JSON
+///   body is joined whatever its size, as in the Python and Node SDKs: a chat
+///   request carrying a large file is still the call the declaration was made
+///   for.</description></item>
 /// </list>
 /// <para>Sibling of the Python SDK's <c>shashu/_joiner.py</c> and the Node
 /// SDK's <c>src/_joiner.ts</c>.</para>
 /// </remarks>
 internal static class RetrievalJoiner
 {
-    /// <summary>
-    /// A body larger than this is passed through untouched. Buffering an
-    /// arbitrary upload to look for a JSON object is the kind of hidden cost an
-    /// instrumentation layer must not impose; a chat completion is orders of
-    /// magnitude below it.
-    /// </summary>
-    private const long MaxBodyBytes = 8 * 1024 * 1024;
-
     /// <summary>Attach the carried declaration to <paramref name="request"/>, in place.</summary>
     /// <remarks>Never throws: a retrieval declaration must not be the thing that
     /// breaks a customer's request.</remarks>
@@ -77,10 +71,8 @@ internal static class RetrievalJoiner
     {
         if (request.Content is not { } content) return;
         if (!LooksLikeJson(content.Headers.ContentType)) return;
-        if (content.Headers.ContentLength is > MaxBodyBytes) return;
-
         var raw = await content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-        if (raw.Length == 0 || raw.Length > MaxBodyBytes) return;
+        if (raw.Length == 0) return;
 
         JsonNode? parsed;
         try

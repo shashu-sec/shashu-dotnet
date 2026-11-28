@@ -100,9 +100,15 @@ internal sealed class ShashuApi
     {
         HttpResponseMessage? response = null;
         var passRetried = false;
+        // The empty-bus path keeps the 1.2.0 content exactly; a declaration is
+        // joined once, like PostAsync, and belongs to this stream alone.
+        byte[]? joined = RetrievalBus.HasEvents()
+            ? await JoinDeclarationOnceAsync(path, JsonSerializer.SerializeToUtf8Bytes(body, Json), cancellationToken)
+                .ConfigureAwait(false)
+            : null;
         while (true)
         {
-            using var content = JsonContent.Create(body, options: Json);
+            using HttpContent content = joined is null ? JsonContent.Create(body, options: Json) : JsonBytes(joined);
             using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = content };
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
             ApplyWorkflowContext(request, sessionId);
@@ -259,6 +265,36 @@ internal sealed class ShashuApi
         return SessionId;
     }
 
+    /// <summary>
+    /// Join the carried declaration onto <paramref name="payload"/> once,
+    /// whatever its size. Whatever this flow declared belongs to this call
+    /// alone: if it could not be attached (an error, a cancellation) it is
+    /// dropped here, so it can never ride on a later call.
+    /// </summary>
+    private static async Task<byte[]> JoinDeclarationOnceAsync(
+        string path, byte[] payload, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var joinReq = new HttpRequestMessage(HttpMethod.Post, path) { Content = JsonBytes(payload) };
+            await RetrievalJoiner.JoinAsync(joinReq, cancellationToken).ConfigureAwait(false);
+            return joinReq.Content is null
+                ? payload
+                : await joinReq.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            RetrievalBus.Clear();
+        }
+    }
+
+    private static ByteArrayContent JsonBytes(byte[] payload)
+    {
+        var content = new ByteArrayContent(payload);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        return content;
+    }
+
     public async Task<TResponse> PostAsync<TRequest, TResponse>(
         string path, TRequest body, CancellationToken cancellationToken, string? sessionId = null)
         where TResponse : class
@@ -267,15 +303,7 @@ internal sealed class ShashuApi
         var passRetried = false;
         var payload = JsonSerializer.SerializeToUtf8Bytes(body, Json);
         if (RetrievalBus.HasEvents())
-        {
-            using var joinReq = new HttpRequestMessage(HttpMethod.Post, path);
-            var joinContent = new ByteArrayContent(payload);
-            joinContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            joinReq.Content = joinContent;
-            await RetrievalJoiner.JoinAsync(joinReq, cancellationToken).ConfigureAwait(false);
-            if (joinReq.Content is not null)
-                payload = await joinReq.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-        }
+            payload = await JoinDeclarationOnceAsync(path, payload, cancellationToken).ConfigureAwait(false);
         var frozenContext = WorkflowContext.Build(sessionId: ResolveSession(sessionId));
         while (true)
         {

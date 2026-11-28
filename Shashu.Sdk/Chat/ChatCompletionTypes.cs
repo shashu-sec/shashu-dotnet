@@ -17,11 +17,61 @@ namespace Shashu.Chat;
 /// arguments directly instead of relying on best-effort de-flattening.
 /// All three are omitted from the JSON when unset, so existing
 /// <c>new ChatMessage(role, content)</c> callers serialise byte-identically.
+/// The content is either one string (<see cref="Content"/>) or an ordered list
+/// of <see cref="ContentPart"/>s (<see cref="ContentParts"/>), built with
+/// <see cref="WithParts"/>.
 /// </remarks>
+[JsonConverter(typeof(ChatMessageJsonConverter))]
 public sealed record ChatMessage(
     [property: JsonPropertyName("role")] string Role,
-    [property: JsonPropertyName("content")] string Content)
+    string Content)
 {
+    private readonly string _content = Content;
+    private readonly IReadOnlyList<ContentPart>? _contentParts;
+
+    /// <summary>
+    /// The text content. Null when there is none or the message carries parts.
+    /// Setting a string (for example in a <c>with</c> expression) replaces the
+    /// parts.
+    /// </summary>
+    [JsonPropertyName("content")]
+    public string Content
+    {
+        get => _content;
+        init
+        {
+            _content = value;
+            if (value is not null) _contentParts = null;
+        }
+    }
+
+    /// <summary>The content parts; null unless the content is a list of parts.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<ContentPart>? ContentParts => _contentParts;
+
+    /// <summary>
+    /// A message whose content is an ordered list of parts, e.g. a question
+    /// and the document it is about. The list is copied and must hold at least
+    /// one part.
+    /// </summary>
+    public static ChatMessage WithParts(string role, params IEnumerable<ContentPart> parts)
+    {
+        ArgumentNullException.ThrowIfNull(parts);
+        var copy = parts.ToArray();
+        if (copy.Length == 0 || Array.Exists(copy, part => part is null))
+            throw new ArgumentException("A message needs at least one part, and no null parts.", nameof(parts));
+        return new ChatMessage(role, null!).WithReadParts(Array.AsReadOnly(copy));
+    }
+
+    private ChatMessage(ChatMessage original, IReadOnlyList<ContentPart> parts)
+        : this(original)
+    {
+        _content = null!;
+        _contentParts = parts;
+    }
+
+    internal ChatMessage WithReadParts(IReadOnlyList<ContentPart> parts) => new(this, parts);
+
     /// <summary>
     /// Tool calls the assistant made (assistant messages only). Each entry
     /// mirrors the OpenAI <c>tool_calls</c> shape the gateway parses:

@@ -22,7 +22,7 @@
 
   <PropertyGroup Label="Package">
     <PackageId>Shashu.Sdk</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Authors>Trustgate AI LLC</Authors>
     <Company>Trustgate AI LLC</Company>
     <Description>.NET client for SHASHU, a self-hosted AI security gateway. Point it at your own gateway; there is no default endpoint.</Description>
